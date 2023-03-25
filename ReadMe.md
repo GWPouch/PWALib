@@ -1,4 +1,4 @@
-#PWALib Progressive WebApp Library
+# PWALib Progressive WebApp Library
 
 This generates progressive WebApps reachable at [https://gwpouch.github.io/PWALib/](https://gwpouch.github.io/PWALib/)
 
