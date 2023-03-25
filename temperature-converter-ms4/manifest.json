@@ -1,13 +1,13 @@
 {
   "lang": "en-us",
-  "name": "Temperature converter app 4",
-  "short_name": "Temperature converter 4",
+  "name": "Temperature converter app 4 browser",
+  "short_name": "Temperature converter 4 browser",
   "description": "A basic temperature converter application that can convert to and from Celsius, Kelvin, and Fahrenheit",
   "start_url": "./temp-converter.html",
   "background_color": "#2f3d58",
   "theme_color": "#2f3d58",
   "orientation": "any",
-  "display":  "standalone",
+  "display":  "browser",
   "icons": [
       {
           "src": "./icon512.png",
