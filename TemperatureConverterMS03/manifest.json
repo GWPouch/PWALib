@@ -1,6 +1,6 @@
 {
   "lang": "en-us",
-  "name": "Temperature converter app 3",
+  "name": "Temperature converter app",
   "short_name": "Temperature converter",
   "description": "A basic temperature converter application that can convert to and from Celsius, Kelvin, and Fahrenheit",
   "start_url": "./",
