@@ -1,5 +1,11 @@
-const CACHE_NAME = `temperature-converter-v1`;
-    
+const CACHE_NAME = `temperature-converter-v4`;
+const FILES_TO_CACHE = [
+  './temp-converter.html',
+  './converter.js',
+  './converter.css'
+];   
+
+
 // Use the install event to pre-cache all initial resources.
 self.addEventListener('install', event => {
   event.waitUntil((async () => {
@@ -13,6 +19,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
+  console.log('fetch event for ' + event.request    )
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 

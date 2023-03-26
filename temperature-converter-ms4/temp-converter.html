@@ -31,6 +31,8 @@
 It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desktop. In Chrome/Desktop, it seems to remove the Install button.</p>
 
 <p>This is a link to the <a href="https://www.weather.gov">  National Weather Service </a> </p>
+
+
 <h1>PWA Temperature Converter 4  <del>browser</del> <ins>standalone</ins> </h1>
     <script src="./converter.js"></script>
     <script>
@@ -38,5 +40,7 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
         navigator.serviceWorker.register('./sw.js', { scope: './' });
       }
     </script>
+    <p><input type="button" value="Refresh the PWA" onclick="this.enabled=false;  refreshTheCache(); this.enabled=true"  /></p>
+
   </body>
 </html>

@@ -4,6 +4,25 @@ const toUnitField = document.getElementById('output-unit');
 const outputField = document.getElementById('output-temp');
 const form = document.getElementById('converter');
 
+const CACHE_NAME = `temperature-converter-v4`;
+const FILES_TO_CACHE = [
+  './temp-converter.html',
+  './converter.js',
+  './converter.css'
+];   
+
+function refreshTheCache(){
+  //alert('This is in refreshTheCache()');
+  
+  const cache = navigator.storage.CacheStorage   .open(CACHE_NAME);
+  cache.addAll(FILES_TO_CACHE );
+
+  //store a timestamp, and maybe display it to the user on the page
+
+}
+
+
+
 function convertTemp(value, fromUnit, toUnit) {
   if (fromUnit === 'c') {
     if (toUnit === 'f') {
