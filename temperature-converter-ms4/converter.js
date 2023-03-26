@@ -14,7 +14,7 @@ const FILES_TO_CACHE = [
 function refreshTheCache(){
   //alert('This is in refreshTheCache()');
   
-  const cache = navigator.storage.CacheStorage   .open(CACHE_NAME);
+  const cache = navigator.storage.CacheStorage.open(CACHE_NAME);
   cache.addAll(FILES_TO_CACHE );
 
   //store a timestamp, and maybe display it to the user on the page
