@@ -5,9 +5,13 @@ const FILES_TO_CACHE = [
   './converter.css'
 ];   
 
+function NowISO8601( ){  return( ( new Date() ).toISOString()    ); }
+
+console.log('outside any function in sw.js,  probably in some register service worker stuff' + NowISO8601()  )
 
 // Use the install event to pre-cache all initial resources.
 self.addEventListener('install', event => {
+  console.log('In start of unnamed event listener for install  ' + NowISO8601() );
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME);
     cache.addAll([
@@ -19,7 +23,7 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-  console.log('fetch event for ' + event.request    )
+  console.log('in unnamed fetch event for ' + event.request.url  + ' ' + NowISO8601()  )
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 

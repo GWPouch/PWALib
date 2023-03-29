@@ -18,11 +18,11 @@ function cacheClear(){
   caches.delete(CACHE_NAME);
 }
 
-async function cacheRefresh(){
+function cacheRefresh(){
   //alert('This is in cacheRefresh()');
   console.log('In cacheRefresh ' + NowISO8601() );
 
-  const cache =  await caches.open(CACHE_NAME);
+  const cache =   caches.open(CACHE_NAME);
   console.log('In cacheRefresh after caches.open() ' + NowISO8601() )
   console.log('In cacheRefresh '  +  cache.toString() )
   

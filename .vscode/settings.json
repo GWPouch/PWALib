@@ -1,7 +1,7 @@
 
 {  
   "liveServer.settings.host"  : "web-apps.yes--we-have-no-bananas.gov",
-  "liveServer.settings.port"  : 443,
+  "liveServer.settings.port"  : 443, //this SHOULD be 443 for easy HTTPS
   "liveServer.settings.https" : {
     "enable": true,
     "cert": "C:\\OpenSSL\\KEYS\\farkleberry\\farkleberry.crt",
