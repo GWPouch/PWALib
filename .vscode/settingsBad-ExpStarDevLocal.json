@@ -1,0 +1,12 @@
+
+{  
+    "liveServer.settings.host"  : "yes--we-have-no-bananas.dev.local",
+    "liveServer.settings.port"  : 443,
+    "liveServer.settings.https" : {
+      "enable": true,
+      "cert": "C:\\Users\\GregAdmin\\Documents\\SSL_Keys\\ALL_Dev_Local.cer",
+      "key":  "C:\\Users\\GregAdmin\\Documents\\SSL_Keys\\ALL_Dev_Local2.pfx",
+      "passphrase": "12345"
+  },
+  "liveServer.settings.donotShowInfoMsg" : true
+}

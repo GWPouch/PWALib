@@ -11,12 +11,23 @@ const FILES_TO_CACHE = [
   './converter.css'
 ];   
 
-function refreshTheCache(){
-  //alert('This is in refreshTheCache()');
-  
-  const cache = navigator.storage.CacheStorage.open(CACHE_NAME);
-  cache.addAll(FILES_TO_CACHE );
+function NowISO8601( ){  return( ( new Date() ).toISOString()    ); }
 
+function cacheClear(){
+  console.log('In cacheClear ' + NowISO8601()  )
+  caches.delete(CACHE_NAME);
+}
+
+async function cacheRefresh(){
+  //alert('This is in cacheRefresh()');
+  console.log('In cacheRefresh ' + NowISO8601() );
+
+  const cache =  await caches.open(CACHE_NAME);
+  console.log('In cacheRefresh after caches.open() ' + NowISO8601() )
+  console.log('In cacheRefresh '  +  cache.toString() )
+  
+  cache.addAll(FILES_TO_CACHE );
+  
   //store a timestamp, and maybe display it to the user on the page
 
 }

@@ -1,0 +1,12 @@
+
+{  
+    "liveServer.settings.host"  : "localhost",
+    "liveServer.settings.port"  : 987,
+    "liveServer.settings.https" : {
+      "enable": true,
+      "cert": "C:\\OpenSSL\\KEYS\\lemon\\lemon.crt",
+      "key":  "C:\\OpenSSL\\KEYS\\lemon\\lemon.key",
+      "passphrase": "12345"
+  },
+  "liveServer.settings.donotShowInfoMsg" : true
+}

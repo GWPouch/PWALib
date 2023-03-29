@@ -1,12 +1,13 @@
 
 {  
-    "liveServer.settings.host"  : "web-apps.yes--we-have-no-bananas.gov",
-    "liveServer.settings.port"  : 443,
-    "liveServer.settings.https" : {
-      "enable": true,
-      "cert": "C:\\OpenSSL\\KEYS\\farkleberry\\farkleberry.crt",
-      "key":  "C:\\OpenSSL\\KEYS\\farkleberry\\farkleberry.key",
-      "passphrase": "12345"
+  "liveServer.settings.host"  : "web-apps.yes--we-have-no-bananas.gov",
+  "liveServer.settings.port"  : 443,
+  "liveServer.settings.https" : {
+    "enable": true,
+    "cert": "C:\\OpenSSL\\KEYS\\farkleberry\\farkleberry.crt",
+    "key":  "C:\\OpenSSL\\KEYS\\farkleberry\\farkleberry.key",
+    "passphrase": "12345"
   },
   "liveServer.settings.donotShowInfoMsg" : true
 }
+

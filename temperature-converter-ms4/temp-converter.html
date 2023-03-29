@@ -40,7 +40,7 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
         navigator.serviceWorker.register('./sw.js', { scope: './' });
       }
     </script>
-    <p><input type="button" value="Refresh the PWA" onclick="this.enabled=false;  refreshTheCache(); this.enabled=true"  /></p>
+    <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
 
   </body>
 </html>
