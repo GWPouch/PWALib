@@ -4,7 +4,7 @@ const toUnitField = document.getElementById('output-unit');
 const outputField = document.getElementById('output-temp');
 const form = document.getElementById('converter');
 
-const CACHE_NAME = `temperature-converter-v4`;
+const CACHE_NAME = `temperature-converter-v5`;
 const FILES_TO_CACHE = [
   './temp-converter.html',
   './converter.js',

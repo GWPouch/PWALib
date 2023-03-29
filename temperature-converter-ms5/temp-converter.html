@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="shortcut icon" href="https://c.s-microsoft.com/favicon.ico?v2" />
+    <link rel="stylesheet" href="./converter.css">
+    <link rel="manifest" href="./manifest.json">
+    <title>Temperature converter PWA  4</title>
+  </head>
+  <body onunload="cacheClear();">
+    <p>Remember to remove onunload="cacheClear();" before releasing.  For experiments only.</p>
+    <h1>PWA Temperature Converter 4</h1>
+    <form id="converter">
+      <label for="input-temp">temperature</label>
+      <input type="text" id="input-temp" name="input-temp" value="20" />
+      <label for="input-unit">from</label>
+      <select id="input-unit" name="input-unit">
+        <option value="c" selected>Celsius</option>
+        <option value="f">Fahrenheit</option>
+        <option value="k">Kelvin</option>
+      </select>
+      <label for="output-unit">to</label>
+      <select id="output-unit" name="output-unit">
+        <option value="c">Celsius</option>
+        <option value="f" selected>Fahrenheit</option>
+        <option value="k">Kelvin</option>
+      </select>
+      <output name="output-temp" id="output-temp" for="input-temp input-unit output-unit">68 F</output>
+    </form>
+<p style="color:darkslateblue">This is PWALib/temperature-converter-ms4/temp-converter.html <br />
+It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desktop. In Chrome/Desktop, it seems to remove the Install button.</p>
+
+<p>This is a link to the <a href="https://www.weather.gov">  National Weather Service </a> </p>
+
+
+<h1>PWA Temperature Converter 4  <del>browser</del> <ins>standalone</ins> </h1>
+    <script src="./converter.js"></script>
+    <script>
+      if('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js', { scope: './' });
+      }
+    </script>
+    <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
+
+  </body>
+</html>
