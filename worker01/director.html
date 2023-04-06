@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Director.html in worker01</title>
+</head>
+<body>
+  <h1>Director.html in worker01/</h1>
+  <p>this page is an attempt <i>ab nihilo</i> to build and use a Worker in JavaScript, mainly so I can see how to debug ServiceWorkers, which are not going  well.</p>
+  <form name="director" method="get" id="idFORMdirector">
+    <label >Base:
+    <input name="base" id="idNUMbase"  type="number" placeholder="12.34" title="For now, the base needs to be positive.  In the future, we can allow negative bases for integer powers." /> </label> <br />
+    <label>Exponent
+      <input name="exponent" id="idNUMexponent"  type="number" placeholder="3" step="any" title="A number, can be positive or negative, integer or not." />
+    </label>   <br />
+    <span id="idSPANresult">output goes here</span>
+    <input type="submit" value="Calculate now" onclick="readInputsAndWriteOutput" />
+  </form>
+  <script>
+    let elmBase = document.getElementById('idNUMbase');
+    let elmExponent = document.getElementById('idNUMexponent');
+    let elmResult  = document.getElementById('idSPANresult');
+
+    
+
+
+    function calcPower(base,exponent){
+      return ( Math.pow(base,exponent)  ) ;
+    }
+    function showResult(someNumber){
+      elmResult.textContent = someNumber.toString();
+    }
+    function readForm(event){
+      
+     readInputsAndWriteOutput(); 
+
+    }
+
+    function readInputsAndWriteOutput(event){
+      try {
+        event.preventDefault();  
+      } catch (error) {
+        //ignore errors here
+      }
+      
+      let dblBase = Number( elmBase.value ); 
+      // elmBase.value comes back as a string. OY!  This is stupid for input type="number"
+      //  and not entering a value gives a blank string, which becomes zero. 
+        if( Number.isFinite( dblBase ) === false ) {
+          dblBase = 2 ; 
+          elmBase.value = dblBase ;
+        }
+      let dblExponent = Number( elmExponent.value );
+        if( Number.isFinite( dblExponent ) === false ) {
+          dblExponent = 3 ; 
+          elmExponent.value = dblExponent ;
+        }
+
+        let objOperands ={ base:dblBase, exponent:dblExponent};
+        workerObj.postMessage(objOperands);
+        
+ return ( false );   
+        
+
+      let result = calcPower( dblBase, dblExponent);
+      showResult(result);  
+      return(false); //this is an event handler that we want to prevent default event from happening  
+
+    }
+
+    function showResultFromWorker(event){
+      console.log('Got message from worker ' + JSON.stringify(event)  );
+      console.log( JSON.stringify(event.data) );
+      let {result: ans } = event.data; // put event.data.result into ans, the hard way 
+      console.log(ans);
+      elmResult.textContent = 'from worker ' + ans;
+
+    }
+
+
+    document.getElementById('idFORMdirector').onsubmit = readInputsAndWriteOutput ;
+    elmBase.onchange = readInputsAndWriteOutput;
+    elmExponent.onchange =readInputsAndWriteOutput;
+// MSEdge desktop goes BOOM!!   if you try  to run this using file:// URL 
+    // Uncaught DOMException DOMException: Failed to construct 'Worker': Script at 'file:///C:/Users/Public/Documents/WebApps/PWALib/worker01/worker01.js' cannot be accessed from origin 'null'.
+    // at <anonymous> (c:\Users\Public\Documents\WebApps\PWALib\worker01\director.html:87:21)
+//
+    let workerObj = new Worker("./worker01.js")
+    workerObj.onmessage = showResultFromWorker ; //note lack of parentheses, so  that has a function pointer.
+  </script>
+</body>
+</html>

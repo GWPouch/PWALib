@@ -1,3 +1,4 @@
+console.log('at top of sw4.js')
 const CACHE_NAME = `temperature-converter-v4`;
 const FILES_TO_CACHE = [
   './temp-converter.html',

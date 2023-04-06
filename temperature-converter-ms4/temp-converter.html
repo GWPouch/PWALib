@@ -35,11 +35,13 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
 
 <h1>PWA Temperature Converter 4  <del>browser</del> <ins>standalone</ins> </h1>
     <script src="./converter.js"></script>
+<script>console.log('in BODY of temp-converter.html 4, right before trying to load serviceworker')</script>
     <script>
       if('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js', { scope: './' });
+        // navigator.serviceWorker.register('./sw4.js', { scope: './' });
       }
     </script>
+    <script>console.log('in BODY of temp-converter.html 4, right AFTER trying to load serviceworker')</script>
     <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
 
   </body>
