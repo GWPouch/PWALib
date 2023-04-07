@@ -7,6 +7,23 @@
     <link rel="stylesheet" href="./converter.css">
     <link rel="manifest" href="./manifest.json">
     <title>Temperature converter PWA  4</title>
+    <style id="idSTYLEalpha">
+      /* copied from TimeStamp05.html*/
+      .nowrap{ /* The whole paragraph on one line. 
+        Kind of like PRE if you alter the HTML to be one big line, 
+        but without a monospaced font, and the HTML can use indentation 
+        see https://developer.mozilla.org/en-US/docs/Web/CSS/white-space */
+        white-space:nowrap;
+      }
+      .scrollableXY{ overflow-x:scroll ; overflow-y: scroll; }
+
+      dialog::backdrop { background: rgba(192, 128, 64, 0.75);}
+
+    </style>
+
+
+
+
   </head>
   <body>
     <h1>PWA Temperature Converter 4</h1>
@@ -34,15 +51,26 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
 
 
 <h1>PWA Temperature Converter 4  <del>browser</del> <ins>standalone</ins> </h1>
+<textarea placeholder="this gets messages from serviceWorker"></textarea>
+
     <script src="./converter.js"></script>
 <script>console.log('in BODY of temp-converter.html 4, right before trying to load serviceworker')</script>
     <script>
       if('serviceWorker' in navigator) {
-        // navigator.serviceWorker.register('./sw4.js', { scope: './' });
+         navigator.serviceWorker.register('./sw4.js', { scope: './' });
+      } else {
+        console.log( "'serviceWorker' in navigator failed" );
+        alert('Could not start the serviceWorker.\nIf you are browsing inPrivate or inCognito, open a  regular browser window and try opening this page again.')
       }
     </script>
     <script>console.log('in BODY of temp-converter.html 4, right AFTER trying to load serviceworker')</script>
     <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
+<p><a href="./temp-converter.html?Joe=Mama">./temp-converter.html?Joe=Mama</a></p>
+<p class="nowrap">Scratch area for your editing convenience<br />
+  <!--In Edge on the laptop, Edge tries to "help" with the grammar.  There might be some no-spell-check flag https://www.geeksforgeeks.org/how-to-disable-spell-checking-from-input-box-and-textarea-in-html-forms/ -->
+  <textarea rows="8" cols="64" class="scrollableXY"    spellcheck="false"
+    placeholder="You can edit text here"></textarea>
+</p>  
 
   </body>
 </html>

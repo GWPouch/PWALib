@@ -89,6 +89,11 @@
 //
     let workerObj = new Worker("./worker01.js")
     workerObj.onmessage = showResultFromWorker ; //note lack of parentheses, so  that has a function pointer.
+
+
+    console.log('window.location.origin', window.location.origin ) 
+    
+
   </script>
 </body>
 </html>

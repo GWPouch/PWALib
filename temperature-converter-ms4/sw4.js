@@ -1,4 +1,5 @@
-console.log('at top of sw4.js')
+//alert('at top of sw4.js')
+self.console.log('at top of sw4.js');
 const CACHE_NAME = `temperature-converter-v4`;
 const FILES_TO_CACHE = [
   './temp-converter.html',
@@ -8,7 +9,7 @@ const FILES_TO_CACHE = [
 
 function NowISO8601( ){  return( ( new Date() ).toISOString()    ); }
 
-console.log('outside any function in sw.js,  probably in some register service worker stuff' + NowISO8601()  )
+self.console.log('outside any function in sw.js,  probably in some register service worker stuff' + NowISO8601()  );
 
 // Use the install event to pre-cache all initial resources.
 self.addEventListener('install', event => {
@@ -24,7 +25,10 @@ self.addEventListener('install', event => {
 });
 
 self.addEventListener('fetch', event => {
-  console.log('in unnamed fetch event for ' + event.request.url  + ' ' + NowISO8601()  )
+  let reqCopy = event.request.clone() ;
+  let reqInfo = reqCopy.url;
+
+  console.log('in unnamed fetch event for yyy ' + reqCopy.url  + ' ' + NowISO8601()  )
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME);
 
