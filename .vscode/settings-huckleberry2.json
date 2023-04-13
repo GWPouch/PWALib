@@ -7,8 +7,8 @@
   "liveServer.settings.port"  : 443, //this SHOULD be 443 for easy HTTPS
   "liveServer.settings.https" : {
     "enable": true,
-    "cert": "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.crt",
-    "key":  "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.key",
+    "cert": "C:\\OpenSSL\\KEYS\\huckleberry\\huckleberry2.crt",
+    "key":  "C:\\OpenSSL\\KEYS\\huckleberry\\huckleberry2.key",
     "passphrase": ""
   }
 }

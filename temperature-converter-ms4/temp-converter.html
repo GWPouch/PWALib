@@ -21,11 +21,37 @@
 
     </style>
 
+<script id="idSCRIPTFileInfoForFooterGWP" title="Writes URL and LastModified into an HTML page.">
 
+    function writeFileInfo(idOfTarget){
+      // this fails if the idOfTarget doesn't exist.
+      if("" == idOfTarget){
+        idOfTarget= "id"+ (new Date() ).getTime() ;  // .getTime()  is equivalent to .valueOf(), and is rather poorly-named
+      }
+
+      try {
+        var dteModified = (new Date(document.lastModified) );         
+        document.getElementById(idOfTarget).innerHTML =    
+           "Page was opened as <br /> " + 
+           document.URL +" <br/><br/>" +
+           "LastModified &nbsp;&nbsp;&nbsp; " +  dteModified.toISOString() + " &nbsp;&nbsp;&nbsp;&nbsp; " +   dteModified.toString()  +'<br />' +
+           "Loaded at " + (new Date() ).toISOString();           
+      } catch (error) {
+        // If we could not find a matching element, add a P element at the end
+         let elm = document.createElement("p");
+         elm.id=idOfTarget ;
+         document.body.appendChild( elm );
+         writeFileInfo(idOfTarget) ;
+      }
+    }
+    
+  </script><!-- end of idSCRIPTFileInfoForFooterGWP -->
+  
 
 
   </head>
-  <body>
+  <body onload="writeFileInfo();" >
+    <p>aaad</p>
     <h1>PWA Temperature Converter 4</h1>
     <form id="converter">
       <label for="input-temp">temperature</label>

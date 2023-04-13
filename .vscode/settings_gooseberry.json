@@ -1,15 +1,15 @@
 
 {  
-  "liveServer.settings.host"  : "herrings.yes--we-have-no-bananas.gov",
+  "liveServer.settings.host"  : "web-apps.yes--we-have-no-bananas.gov",
   "liveServer.settings.useLocalIp": false,
   "liveServer.settings.donotShowInfoMsg" : true,
 
   "liveServer.settings.port"  : 443, //this SHOULD be 443 for easy HTTPS
   "liveServer.settings.https" : {
     "enable": true,
-    "cert": "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.crt",
-    "key":  "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.key",
-    "passphrase": ""
+    "cert": "C:\\OpenSSL\\KEYS\\gooseberry\\gooseberry.crt",
+    "key":  "C:\\OpenSSL\\KEYS\\gooseberry\\gooseberry.key",
+    "passphrase": "12345"
   }
 }
 
