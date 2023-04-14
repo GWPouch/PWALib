@@ -1,5 +1,5 @@
 
-self.console.log('at very top of sw4.js before any other code has run');
+self.console.log('at very top of sw6.js before any other code has run');
 
 // general debugging helpers
 const LF = "\n";
@@ -91,11 +91,11 @@ function writeRequestToText(req){
 // end ServiceWorker debugging helpers
 
 
-const CACHE_NAME = `temperature-converter-v4`;
-const FILES_TO_CACHE = [
-  './temp-converter4.html',
-  './converter4.js',
-  './converter4.css'
+const CACHE_NAME = `temperature-converter-v6`;
+const CACHE_FILES_LIST = [
+  './temp-converter6.html',
+  './converter6.js',
+  './converter6.css'
 ];   
 
 
@@ -130,7 +130,7 @@ function ServiceWorker_install(event){
   event.waitUntil(
     (async () => {
       const cache = await caches.open(CACHE_NAME);
-      cache.addAll( FILES_TO_CACHE );
+      cache.addAll( CACHE_FILES_LIST );
       listCachedURLs();
     })()
   );

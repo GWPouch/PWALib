@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en-US" dir="ltr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <link rel="shortcut icon" href="https://c.s-microsoft.com/favicon.ico?v2" />
+    <link rel="stylesheet" href="./converter6.css">
+    <link rel="manifest" href="./manifest6.json">
+    <title>Temperature converter PWA  6</title>
+    <style id="idSTYLEalpha">
+      /* copied from TimeStamp05.html*/
+      .nowrap{ /* The whole paragraph on one line. 
+        Kind of like PRE if you alter the HTML to be one big line, 
+        but without a monospaced font, and the HTML can use indentation 
+        see https://developer.mozilla.org/en-US/docs/Web/CSS/white-space */
+        white-space:nowrap;
+      }
+      .scrollableXY{ overflow-x:scroll ; overflow-y: scroll; }
+
+      dialog::backdrop { background: rgba(192, 128, 64, 0.75);}
+
+    </style>
+
+<script id="idSCRIPTFileInfoForFooterGWP" title="Writes URL and LastModified into an HTML page.">
+
+    function writeFileInfo(idOfTarget){
+      // this fails if the idOfTarget doesn't exist.
+      if("" == idOfTarget){
+        idOfTarget= "id"+ (new Date() ).getTime() ;  // .getTime()  is equivalent to .valueOf(), and is rather poorly-named
+      }
+
+      try {
+        var dteModified = (new Date(document.lastModified) );         
+        document.getElementById(idOfTarget).innerHTML =    
+           "Page was opened as <br /> " + 
+           document.URL +" <br/><br/>" +
+           "LastModified &nbsp;&nbsp;&nbsp; " +  dteModified.toISOString() + " &nbsp;&nbsp;&nbsp;&nbsp; " +   dteModified.toString()  +'<br />' +
+           "Loaded at " + (new Date() ).toISOString();           
+      } catch (error) {
+        // If we could not find a matching element, add a P element at the end
+         let elm = document.createElement("p");
+         elm.id=idOfTarget ;
+         document.body.appendChild( elm );
+         writeFileInfo(idOfTarget) ;
+      }
+    }
+    
+  </script><!-- end of idSCRIPTFileInfoForFooterGWP -->
+  <script id="idSCRIPTGP0001">
+
+  </script>  
+
+
+  </head>
+  <body onload="writeFileInfo();" >
+    <p>020, copied from _ms4</p>
+    <h1>PWA Temperature Converter 6</h1>
+    <form id="converter">
+      <label for="input-temp">temperature</label>
+      <input type="text" id="input-temp" name="input-temp" value="20" />
+      <label for="input-unit">from</label>
+      <select id="input-unit" name="input-unit">
+        <option value="c" selected>Celsius</option>
+        <option value="f">Fahrenheit</option>
+        <option value="k">Kelvin</option>
+      </select>
+      <label for="output-unit">to</label>
+      <select id="output-unit" name="output-unit">
+        <option value="c">Celsius</option>
+        <option value="f" selected>Fahrenheit</option>
+        <option value="k">Kelvin</option>
+      </select>
+      <output name="output-temp" id="output-temp" for="input-temp input-unit output-unit">68 F</output>
+    </form>
+<p style="color:darkslateblue">This is PWALib/temperature-converter-ms6/temp-converter.html <br />
+It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desktop. In Chrome/Desktop, it seems to remove the Install button.</p>
+
+<p>This is a link to the <a href="https://www.weather.gov">  National Weather Service </a> </p>
+
+
+<h1>PWA Temperature Converter 6  <del>browser</del> <ins>standalone</ins> </h1>
+<textarea placeholder="this gets messages from serviceWorker"></textarea>
+
+    <script src="./converter6.js"></script>
+<script>console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker')</script>
+    <script>
+      if('serviceWorker' in navigator) {
+         navigator.serviceWorker.register('./sw6.js', { scope: './' });
+      } else {
+        console.log( "'serviceWorker' in navigator failed" );
+        alert('Could not start the serviceWorker.\nIf you are browsing inPrivate or inCognito, open a  regular browser window and try opening this page again.')
+      }
+    </script>
+    <script>console.log('in BODY of temp-converter.html 6, right AFTER trying to load serviceworker')</script>
+    <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
+<p><a href="./temp-converter.html?Joe=Mama">./temp-converter.html?Joe=Mama</a></p>
+<p class="nowrap">Scratch area for your editing convenience<br />
+  <!--In Edge on the laptop, Edge tries to "help" with the grammar.  There might be some no-spell-check flag https://www.geeksforgeeks.org/how-to-disable-spell-checking-from-input-box-and-textarea-in-html-forms/ -->
+  <textarea rows="8" cols="64" class="scrollableXY"    spellcheck="false"
+    placeholder="You can edit text here"></textarea>
+</p>  
+
+  </body>
+</html>
