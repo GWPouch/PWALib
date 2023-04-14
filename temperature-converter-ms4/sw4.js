@@ -93,27 +93,54 @@ function writeRequestToText(req){
 
 const CACHE_NAME = `temperature-converter-v4`;
 const FILES_TO_CACHE = [
-  './temp-converter.html',
-  './converter.js',
-  './converter.css'
+  './temp-converter4.html',
+  './converter4.js',
+  './converter4.css'
 ];   
 
 
 self.console.log('outside any function in sw.js,  probably in some register service worker stuff' + NowISO8601()  );
 
-// Use the install event to pre-cache all initial resources.
-self.addEventListener('install', event => {
-  console.log('In start of unnamed event listener for install  ' + NowISO8601() );
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    cache.addAll([
-      './temp-converter.html',
-      './converter.js',
-      './converter.css'
-    ]);
-  })());
-});
+// // Use the install event to pre-cache all initial resources.
+// self.addEventListener('install', event => {
+//   console.log('In start of unnamed event listener for install  ' + NowISO8601() );
+//   event.waitUntil((async () => {
+//     const cache = await caches.open(CACHE_NAME);
+//     cache.addAll([
+//       './temp-converter.html',
+//       './converter.js',
+//       './converter.css'
+//     ]);
+//   })());
+// });
 
+async function listCachedURLs(){
+
+  let cache = await caches.open(CACHE_NAME);
+  let theKeys = await cache.keys() ;
+  let req = new Request("https://www.weather.gov");
+  
+  console.log('List of URLs that are in cache ' + NowISO8601() );
+  keys.forEach( (rq)=>{ console.log('  ' + rq.url) } )
+  console.log(LF);
+}
+
+function ServiceWorker_install(event){
+  console.log('In start of ServiceWorker_install  event listener for install  ' + NowISO8601() );
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      cache.addAll( FILES_TO_CACHE );
+      listCachedURLs();
+    })()
+  );
+  
+
+
+
+} // end of ServiceWorker_install
+
+self.addEventListener('install', ServiceWorker_install);
 
 function ServiceWorker_fetch(event){
   {
