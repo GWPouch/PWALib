@@ -125,35 +125,146 @@ async function listCachedURLs(){
   console.log(LF);
 }
 
+
+async function cacheLoad(){
+  const cache = await caches.open(CACHE_NAME);
+  cache.addAll( CACHE_FILES_LIST );
+  await listCachedURLs();
+}
+      // function ServiceWorker_install(event){   //moved actual work into  cacheLoad()  so we can use it in response to onmessage data.cmd=cacheRefresh
+      //   console.log('In start of ServiceWorker_install  event listener for install  ' + NowISO8601() );
+      //   event.waitUntil(
+      //     (async () => {
+      //       const cache = await caches.open(CACHE_NAME);
+      //       cache.addAll( CACHE_FILES_LIST );
+      //       await listCachedURLs();
+      //     })()
+      //   );
+
+
 function ServiceWorker_install(event){
   console.log('In start of ServiceWorker_install  event listener for install  ' + NowISO8601() );
-  event.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE_NAME);
-      cache.addAll( CACHE_FILES_LIST );
-      listCachedURLs();
-    })()
-  );
+  event.waitUntil( cacheLoad()   );
   
-
-
-
 } // end of ServiceWorker_install
 
 self.addEventListener('install', ServiceWorker_install);
 
+
+
+
+function writeMessageToString(event){
+  // copied from worker01/worker01.js
+  let retVal = ('Event processed at ' + ' ' + NowISO8601() +'\n' ) ;
+  try {
+    retVal = retVal + '  type: ' + event.constructor.name +'\n';
+    retVal = retVal + '  lastEventId: _' + event.lastEventId +'_' +'\n';
+    retVal = retVal + '  source: _' + event.source +'_\n';
+    retVal = retVal + '  origin: _' + event.origin + '_'+'\n';
+    retVal = retVal + '  data ' +  JSON.stringify( event.data ) +'\n';      
+  } catch (error) {
+    //ignore errors here
+  }
+ return( retVal );
+} // end function writeMessageToString
+
+
+
+function ServiceWorker_message(event){
+  console.log(' message event handler in ServiceWorker ' + NowISO8601() );
+  console.log( writeMessageToString(event)  );
+  try {
+    let cmd = event.data.cmd ;
+    if(cmd){
+      processCommands(cmd) ;
+    }
+      
+  } catch (error) {
+    // ignore errors here
+  }
+
+
+}
+self.onmessage = ServiceWorker_message ; //note absence of ()  since we're assigning a function pointer.  Or we could self.addEventListener
+
+
+async function processCommands(strCommand){
+  switch (cmd) {
+    case 'cacheDelete':
+          console.log('In cacheDelete ' + NowISO8601()  );
+        await caches.delete(CACHE_NAME);
+          console.log('end of cacheDelete ' + NowISO8601() + LF  );      
+      break;
+
+    case 'cacheRefresh':
+          console.log('in cacheRefresh '+ NowISO8601());
+        await caches.delete(CACHE_NAME);
+        await cacheLoad();
+          console.log('end of cacheRefresh ' + NowISO8601()  + LF);
+      break;    
+
+
+    case 'cacheList':
+          console.log('sw cacheList '+ NowISO8601() + LF);
+          console.log( CACHE_NAME,'  ', CACHE_FILES_LIST);
+        await listCachedURLs() ;
+          console.log('end sw cacheList '+ NowISO8601() + LF);
+      break;    
+
+      
+    case 'goAway':
+          console.log('Goodbye, cold, cruel world. ' + NowISO8601() );
+        caches.delete(CACHE_NAME);
+        await self.registration.unregister();
+          console.log('I\'m me-e-e-l-lting'+NowISO8601() );
+      break;  
+
+    default:
+      break;
+  }  
+}
+
 function ServiceWorker_fetch(event){
   {
+    console.log('Start of ServiceWorker_fetch 011');
+
+    event.waitUntil( async(event)=>{
+
+//for some reason, this locks up badly in Edge when I run it.
+// I need to understand Promises and async and await.....
+      console.log('Start of fetch   postMessage to client schtick');
+
+    // from https://developer.mozilla.org/en-US/docs/Web/API/Client/postMessage
+      if (!event.clientId) return;// Exit early if we don't have access to the client. // Eg, if it's cross-origin.
+      const client = await clients.get(event.clientId);// Get the client.
+      if (!client) return;// Exit early if we don't get the client. // Eg, if it closed.
+      // Send a message to the client.
+      client.postMessage(
+        {
+          msg: "Hey I just got a fetch from you!",
+          url: event.request.url,
+        }
+      );
+    }); //end of event.waitUntil arrow function
+    // ^^ from https://developer.mozilla.org/en-US/docs/Web/API/Client/postMessage ^^
+
+
+
+
+
     let reqCopy = event.request.clone() ;
     console.log('in ServiceWorker_fetch(event) for 010 ' + reqCopy.url  + ' ' + NowISO8601()  );
   
-    let reqInfo = 'some text'; 
+    // let reqInfo = 'some text'; 
     
-    // reqInfo = describeObject( reqCopy.clone()  );     //   NOPE. JSON.stringify() Did not work at all. JSON.stringify( reqCopy );// maybe this works really well.
+    // // reqInfo = describeObject( reqCopy.clone()  );     //   NOPE. JSON.stringify() Did not work at all. JSON.stringify( reqCopy );// maybe this works really well.
+    // // console.log(reqInfo);
+    // reqInfo = writeRequestToText(reqCopy.clone()) ;
     // console.log(reqInfo);
-    reqInfo = writeRequestToText(reqCopy.clone()) ;
-    console.log(reqInfo);
   
+
+
+
     event.respondWith((async () => {
       const cache = await caches.open(CACHE_NAME);
   
@@ -179,6 +290,33 @@ function ServiceWorker_fetch(event){
 }
 
 self.addEventListener('fetch',ServiceWorker_fetch );
+
+// self.addEventListener("fetch", (event) => {
+// // copied from https://developer.mozilla.org/en-US/docs/Web/API/Client/postMessage
+//   event.waitUntil(
+//     (async () => {
+//       // Exit early if we don't have access to the client.
+//       // Eg, if it's cross-origin.
+//       if (!event.clientId) return;
+
+//       // Get the client.
+//       const client = await clients.get(event.clientId);
+//       // Exit early if we don't get the client.
+//       // Eg, if it closed.
+//       if (!client) return;
+
+//       // Send a message to the client.
+//       client.postMessage({
+//         msg: "serviceWorker "+ self.location + " just got a fetch from you!",
+//         url: event.request.url,
+//       });
+//     })()
+//   );
+// });
+
+
+
+
 
 //replaced arrow function below with a named function above. 0230407T1756Z
 
@@ -212,3 +350,7 @@ self.addEventListener('fetch',ServiceWorker_fetch );
 //     }
 //   })());
 // });
+
+
+// causes  on: Only the active worker can claim clients.
+//  self.clients.claim(); //https://stackoverflow.com/questions/51728455/transfer-data-between-client-and-serviceworker

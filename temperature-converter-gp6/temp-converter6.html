@@ -25,6 +25,11 @@
 
     function writeFileInfo(idOfTarget){
       // this fails if the idOfTarget doesn't exist.
+      if( idOfTarget === undefined) { idOfTarget = ''; }
+      if( idOfTarget === null )     { idOfTarget = ''; }
+      if( idOfTarget === false )    { idOfTarget = ''; }     
+      if( idOfTarget === NaN )      { idOfTarget = ''; }
+ 
       if("" == idOfTarget){
         idOfTarget= "id"+ (new Date() ).getTime() ;  // .getTime()  is equivalent to .valueOf(), and is rather poorly-named
       }
@@ -47,6 +52,42 @@
     
   </script><!-- end of idSCRIPTFileInfoForFooterGWP -->
   <script id="idSCRIPTGP0001">
+
+function writeMessageToString(event){
+  // copied from worker01/worker01.js
+  let retVal = ('Event processed at ' + ' ' + NowISO8601() +'\n' ) ;
+  try {
+    retVal = retVal + '  type: ' + event.constructor.name +'\n';
+    retVal = retVal + '  lastEventId: _' + event.lastEventId +'_' +'\n';
+    retVal = retVal + '  source: _' + event.source +'_\n';
+    retVal = retVal + '  origin: _' + event.origin + '_'+'\n';
+    retVal = retVal + '  data ' +  JSON.stringify( event.data ) +'\n';      
+  } catch (error) {
+    //ignore errors here
+  }
+ return( retVal );
+} // end function writeMessageToString
+
+
+
+function WebPage_message(event){
+  console.log(' message event handler in webpage, probably from serviceWorker ' + NowISO8601() );
+  console.log( writeMessageToString(event)  );
+
+}
+
+
+function unregisterAllServiceWorkers(){
+  // from https://love2dev.com/blog/how-to-uninstall-a-service-worker/ , with improved indentation for readability
+  navigator.serviceWorker.getRegistrations().then( 
+     function(registrations) { 
+        for(let registration of registrations) {
+          registration.unregister(); 
+        } 
+      }
+    ); 
+
+}
 
   </script>  
 
@@ -82,18 +123,54 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
 <textarea placeholder="this gets messages from serviceWorker"></textarea>
 
     <script src="./converter6.js"></script>
-<script>console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker')</script>
+
+    <script>console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker')</script>
+
     <script>
+      var promRegistration = null;
+      var theServiceWorker = null;
+      var theAnswer = null;
       if('serviceWorker' in navigator) {
-         navigator.serviceWorker.register('./sw6.js', { scope: './' });
+        promRegistration = navigator.serviceWorker.register('./sw6.js', { scope: './' })   ;
+        promRegistration.then( (swRegistration)=>{
+          theAnswer=42;
+          if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
+          if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
+          if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
+          //    theServiceWorker = swRegistration.active ;
+        } )
+
+
+        console.log('promRegistration is ', promRegistration  );
+        navigator.serviceWorker.addEventListener('message', WebPage_message) ;
+//         self.addEventListener('message',WebPage_message )
+// //self.onmessage = WebPage_message ; //note absence of ()  since we're assigning a function pointer.  Or we could self.addEventListener
+
+
       } else {
         console.log( "'serviceWorker' in navigator failed" );
         alert('Could not start the serviceWorker.\nIf you are browsing inPrivate or inCognito, open a  regular browser window and try opening this page again.')
       }
+      console.log('theAnswer ', theAnswer);
     </script>
-    <script>console.log('in BODY of temp-converter.html 6, right AFTER trying to load serviceworker')</script>
-    <p><input type="button" value="Clear the Cache" onclick=" cacheClear();"  />  <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  /></p>
-<p><a href="./temp-converter.html?Joe=Mama">./temp-converter.html?Joe=Mama</a></p>
+    
+    <script>console.log('in BODY of temp-converter.html 6, right AFTER trying to load serviceWorker')</script>
+    
+    <p><input type="button" value="Delete the Cache" onclick=" cacheClear();"  />  
+       <input type="button" value="Refresh the Cache" onclick="this.enabled=false;  cacheRefresh(); this.enabled=true"  />
+       <input type="button" value="Send message to ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'Print Me', value:11  });" /> <br /><br />
+
+       <input type="button" value="Delete cache using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheDelete' , value:'now'  });" /> <br /> 
+
+       <input type="button" value="Reload cache using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheRefresh' , value:'now'  });" /> <br /> 
+
+       <input type="button" value="List cache pages using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
+
+       <input type="button" value="Kill ServiceWorker using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });" /> <br /> 
+
+      </p>
+<p><a href="./temp-converter6.html?Joe=Mama">./temp-converter.html6?Joe=Mama</a></p>
+
 <p class="nowrap">Scratch area for your editing convenience<br />
   <!--In Edge on the laptop, Edge tries to "help" with the grammar.  There might be some no-spell-check flag https://www.geeksforgeeks.org/how-to-disable-spell-checking-from-input-box-and-textarea-in-html-forms/ -->
   <textarea rows="8" cols="64" class="scrollableXY"    spellcheck="false"

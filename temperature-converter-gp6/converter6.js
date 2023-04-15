@@ -1,3 +1,7 @@
+const LF = "\n";
+
+
+
 const inputField = document.getElementById('input-temp');
 const fromUnitField = document.getElementById('input-unit');
 const toUnitField = document.getElementById('output-unit');
@@ -6,9 +10,9 @@ const form = document.getElementById('converter');
 
 const CACHE_NAME = `temperature-converter-v6`;
 const CACHE_FILES_LIST = [
-  './temp-converter4.html',
-  './converter4.js',
-  './converter4.css'
+  './temp-converter6.html',
+  './converter6.js',
+  './converter6.css'
 ];   
 
 function NowISO8601( ){  return( ( new Date() ).toISOString()    ); }
@@ -23,7 +27,7 @@ async function cacheRefresh(){
   //alert('This is in cacheRefresh()');
   console.log('In cacheRefresh ' + NowISO8601() );
 
-  const cache =   caches.open(CACHE_NAME);
+  const cache =   await caches.open(CACHE_NAME);
   console.log('In cacheRefresh after caches.open() ' + NowISO8601() )
   console.log('In cacheRefresh '  +  cache.toString() )
   

@@ -6,20 +6,20 @@
 
     console.log('worker received message: ' + JSON.stringify( theData ) );
     //take apart data here
-    let base = theData.base;
+    let base = theData.base;      
     let exponent = theData.exponent;
 
     let result = Math.pow( base, exponent  );
-    let obj ={result:result, base:base, exponent:exponent, time:nowISO8601() }
+    let obj ={result:result, base:base, exponent:exponent, time:NowISO8601() }
     self.postMessage( obj  );
 
   }
 
-  function nowISO8601(){ return(  (new Date).toISOString() )  }
+  function NowISO8601(){ return(  (new Date).toISOString() )  }
  
 
   function showMessageInConsole(event){
-    console.log('Properties of event ' + ' ' + nowISO8601() );
+    console.log('Properties of event ' + ' ' + NowISO8601() );
     console.log('  type ' + typeof event ); //just comes in as 'object'
     console.log('  event.constructor.name '  + event.constructor.name );
     console.log('  event.lastEventId _' + event.lastEventId +'_'  ); //this was blank
@@ -32,7 +32,7 @@
   }
 
   function writeMessageToString(event){
-    let retVal = ('Event processed at ' + ' ' + nowISO8601() +'\n' ) ;
+    let retVal = ('Event processed at ' + ' ' + NowISO8601() +'\n' ) ;
     try {
       retVal = retVal + '  type: ' + event.constructor.name +'\n';
       retVal = retVal + '  lastEventId: _' + event.lastEventId +'_' +'\n';
@@ -57,7 +57,7 @@
   }
 
 
-  let strThreadStarted=nowISO8601();
+  let strThreadStarted=NowISO8601();
 
   self.onmessage = messageReceiver ;
   
