@@ -114,22 +114,30 @@ self.console.log('outside any function in sw.js,  probably in some register serv
 //   })());
 // });
 
-async function listCachedURLs(){
+async function listCachedURLs(nameOfCache){
+  if( (null===nameOfCache) ||
+      (undefined === nameOfCache) ||
+      (''=== nameOfCache) ){
+      nameOfCache = CACHE_NAME
+  }
+  console.log( 'nameOfCache: ' + nameOfCache +' ' + NowISO8601() );
 
-  let cache = await caches.open(CACHE_NAME);
+  let cache = await caches.open(nameOfCache);
+      console.log( 'cache is now of type ' + cache.constructor.name +' ' + NowISO8601() );
   let theKeys = await cache.keys() ;
-  let req = new Request("https://www.weather.gov");
+      console.log( 'theKeys is now of type ' + theKeys.constructor.name +' '  + NowISO8601() + ' ' + theKeys.length );
+  let req ; //= new Request("https://www.weather.gov");
   
   console.log('List of URLs that are in cache ' + NowISO8601() );
   theKeys.forEach( (rq)=>{ console.log('  ' + rq.url) } )
   console.log(LF);
-}
+} // end of async function listCachedURLs(nameOfCache)
 
 
 async function cacheLoad(){
   const cache = await caches.open(CACHE_NAME);
-  cache.addAll( CACHE_FILES_LIST );
-  await listCachedURLs();
+  await cache.addAll( CACHE_FILES_LIST );
+  await listCachedURLs(CACHE_NAME);
 }
       // function ServiceWorker_install(event){   //moved actual work into  cacheLoad()  so we can use it in response to onmessage data.cmd=cacheRefresh
       //   console.log('In start of ServiceWorker_install  event listener for install  ' + NowISO8601() );
@@ -175,6 +183,7 @@ function ServiceWorker_message(event){
   console.log( writeMessageToString(event)  );
   try {
     let cmd = event.data.cmd ;
+    console.log('cmd = ' + cmd +' ' + NowISO8601() );
     if(cmd){
       processCommands(cmd) ;
     }
@@ -189,7 +198,7 @@ self.onmessage = ServiceWorker_message ; //note absence of ()  since we're assig
 
 
 async function processCommands(strCommand){
-  switch (cmd) {
+  switch (strCommand) {
     case 'cacheDelete':
           console.log('In cacheDelete ' + NowISO8601()  );
         await caches.delete(CACHE_NAME);
@@ -216,7 +225,7 @@ async function processCommands(strCommand){
           console.log('Goodbye, cold, cruel world. ' + NowISO8601() );
         caches.delete(CACHE_NAME);
         await self.registration.unregister();
-          console.log('I\'m me-e-e-l-lting'+NowISO8601() );
+          console.log('I\'m me-e-e-l-l-ting'+NowISO8601() );
       break;  
 
     default:

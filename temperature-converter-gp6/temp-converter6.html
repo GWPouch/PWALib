@@ -134,9 +134,12 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
         promRegistration = navigator.serviceWorker.register('./sw6.js', { scope: './' })   ;
         promRegistration.then( (swRegistration)=>{
           theAnswer=42;
-          if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
-          if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
-          if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
+
+          theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);
+          console.log( ' after ORing swRegistration.waiting, .active. .installing',  theServiceWorker.constructor.name )
+          // if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
+          // if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
+          // if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
           //    theServiceWorker = swRegistration.active ;
         } )
 
