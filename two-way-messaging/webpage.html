@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Two-way messaging with a ServiceWorker</title>
+</head>
+<script id="idSCRIPTDebuggingHelper010">
+  const LF = "\n";
+  const VER='v.030'
+  function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
+
+  function describeObject(obj){
+    let retVal = 'ConstructorName: ' +  obj.constructor.name + EOL ;
+
+    retVal = retVal + ' enumerableMembers: [ ' ;
+    for(let key in obj){
+      retVal = retVal + key + ' , ' ;
+    }
+    //get rid of final  ' , '   and replace with ];\n
+    let iLast = retVal.lastIndexOf( ' , ');
+    retVal = retVal.substring(0,iLast) + '];\n' ;
+
+    retVal = retVal + ' nonEnumerableMembers: [ ' ;
+    let listProps = Object.getOwnPropertyNames(obj);
+    for(let key2 in listProps ){
+      retVal = retVal + key2 + ' , ' ;
+    }
+    retVal = retVal  + '];\n' ;
+
+    retVal = retVal  +  'allEnumerableMembers: [ ' ;
+    for(let key3 in obj){
+      //https://stackoverflow.com/questions/208016/how-to-list-the-properties-of-a-javascript-object/32413145#32413145
+      retVal = retVal + key3 + ' , ' ; //stackoverflow claims this will get ancestor properties too
+    }
+    retVal = retVal  + '];\n' ;
+
+    return(retVal);
+  } //end of describeObject
+
+
+</script>
+
+
+<script id="idSCRIPTServiceWorker030">
+
+const APP_NAME = 'Window+ServiceWorkerCommunicator';
+const broadcastChannel = new BroadcastChannel( APP_NAME);
+broadcastChannel.onmessage = WebPage_message ;
+
+let theServiceWorker = null;
+let theServiceWorkerRegistration = null;
+let theAnswerToLifeTheUniverseAndEverything;
+
+
+function unregisterAllServiceWorkers(){
+// This works  onunload="theServiceWorkerRegistration.unregister()
+// but none of my attempts at getting the registrations worked.
+
+  // from https://love2dev.com/blog/how-to-uninstall-a-service-worker/ , with improved indentation for readability
+  console.log('in unregisterAllServiceWorkers()', NowISO8601(), theServiceWorker )
+  //theServiceWorker.registration.unregister();
+  navigator.serviceWorker.unregister();
+//   in unregisterAllServiceWorkers() 2023-04-18T23:32:57.776Z ServiceWorker {scriptURL: 'https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/serviceworker.js', state: 'activated', onstatechange: null, onerror: null} 
+// webpage.html:54
+// Uncaught TypeError: Cannot read properties of undefined (reading 'unregister')
+//     at unregisterAllServiceWorkers (/two-way-messaging/webpage.html:54:33)
+//     at onunload (/two-way-messaging/webpage.html:131:94)
+// unregisterAllServiceWorkers @ webpage.html:54
+// onunload @ webpage.html:131
+// Navigated to https://herrings.yes--we-have-no-bananas.gov/
+
+
+  let k=1;
+  if('serviceWorker' in navigator){
+   navigator.serviceWorker.getRegistrations().then( 
+     (registrations)=> { 
+        console.log('there are '+ registrations.length +' registrations ' )
+        for(let registration of registrations) {
+          registration.unregister();
+          k++ ; 
+        } 
+      }
+    ); 
+  }
+    console.log('finished unregisterAllServiceWorkers()', k, NowISO8601() );
+}
+
+function writeMessageToString(event){
+  // copied from worker01/worker01.js
+  let retVal = ('MessageEvent processed at ' + ' ' + NowISO8601() +'\n' ) ;
+  try {
+    retVal = retVal + '  type: ' + event.constructor.name +'\n';
+    retVal = retVal + '  lastEventId: _' + event.lastEventId +'_' +'\n';
+    retVal = retVal + '  source: _' + event.source +'_\n';
+    retVal = retVal + '  origin: _' + event.origin + '_'+'\n';
+    retVal = retVal + '  data ' +  JSON.stringify( event.data ) +'\n';      
+  } catch (error) {
+    //ignore errors here
+    console.log('Error caught in writeMessageToString()  in webpage ', error, NowISO8601());
+  }
+ return( retVal );
+} // end function writeMessageToString
+
+function WebPage_message(event){
+  console.log('Message event handler in webpage ' + NowISO8601() );
+  console.log( writeMessageToString(event)  );
+}
+
+
+async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' , relScopeOfServiceWorker ='./' ){
+        var promRegistration = null;
+
+        if('serviceWorker' in navigator){
+          promRegistration = navigator.serviceWorker.register(relURLOfServiceWorker, { scope: relScopeOfServiceWorker })   ;
+           promRegistration.then( 
+            (swRegistration)=>{
+              console.log(' resolved serviceWorker registration at ' + NowISO8601());
+
+              theAnswerToLifeTheUniverseAndEverything = 42;
+              theServiceWorkerRegistration = swRegistration;
+              // two of the swRegistration .active .waiting .installing will be null. We probably get the value from  .waiting.
+              theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);    
+              theServiceWorker.addEventListener('message', WebPage_message) ;
+              
+              console.log('theServiceWorker is a ' + theServiceWorker.constructor.name );
+              
+                //this sends a message to the serviceWorker 
+              theServiceWorker.postMessage({from:'html  .then() of ServiceWorker.register', what:'html page resolved serviceWorkerStart'})
+                //this sends a message to this window.
+              window.postMessage({from:'html', what:'finished registering service worker', when: NowISO8601()}  );
+                // if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
+                // if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
+                // if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
+            } 
+           ); // end of .then() on promise-of-registration of serviceWorker 
+           console.log('serviceWorker registration started ' +VER +NowISO8601() ); 
+        } else {
+          console.log('ServiceWorker not available')
+        }
+      } 
+      
+
+  function startServiceWorkerAndMessaging(){
+    window.addEventListener('message', WebPage_message );
+    serviceWorkerStart('./serviceworker-skeleton.js'  ); //which adds the WebPage_message listener to the ServiceWorker
+  }
+
+
+</script>
+<body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorkerRegistration.unregister()"  >
+  <h1>Two-way messaging with a ServiceWorker</h1>
+  <input type="button" value="Inquire VER" onclick="theServiceWorker.postMessage({cmd:'inquire:VER;inquire:APP_NAME;   spaces:    '})" />
+
+  <input type="button" value="List cache pages using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
+</body>
+</html>

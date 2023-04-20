@@ -20,7 +20,10 @@
       dialog::backdrop { background: rgba(192, 128, 64, 0.75);}
 
     </style>
+<script id="idSCRIPTPageVariables">
+  const VER='v.022';
 
+</script>
 <script id="idSCRIPTFileInfoForFooterGWP" title="Writes URL and LastModified into an HTML page.">
 
     function writeFileInfo(idOfTarget){
@@ -93,8 +96,10 @@ function unregisterAllServiceWorkers(){
 
 
   </head>
-  <body onload="writeFileInfo();" >
-    <p>020, copied from _ms4</p>
+  <body onload="writeFileInfo(); document.getElementById('idPVersion').innerText='Version '+VER;  " >
+    
+    <p id="idPVersion">v0Twenty-Two modern major general</p> 
+    <p> , copied from _ms4</p>
     <h1>PWA Temperature Converter 6</h1>
     <form id="converter">
       <label for="input-temp">temperature</label>
@@ -124,17 +129,49 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
 
     <script src="./converter6.js"></script>
 
-    <script>console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker')</script>
-
     <script>
-      var promRegistration = null;
-      var theServiceWorker = null;
-      var theAnswer = null;
+      //console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker')
+      async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' , relScopeOfServiceWorker ='./' ){
+        var promRegistration = null;
+        //var theServiceWorker = null;
+        var theAnswer = null;
+        if('serviceWorker' in navigator){
+          promRegistration = navigator.serviceWorker.register(relURLOfServiceWorker, { scope: relScopeOfServiceWorker })   ;
+          promRegistration.then( (swRegistration)=>{
+            console.log(' resolved promRegistration at ' + NowISO8601());
+            theAnswer=42;
+              // two of the swRegistration .active .waiting .installing will be null. We probably get the value from  .waiting.
+            theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);    
+            console.log('theServiceWorker is a ' + theServiceWorker.constructor.name ); 
+            theServiceWorker.postMessage({txt:'sent from html,  .then() of ServiceWorker.register '})
+            window.postMessage({what:'from html  finished registering service worker', when: NowISO8601()}  );
+              // if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
+              // if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
+              // if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
+          } );
+
+          
+          // return (theServiceWorker );    
+        } else {
+          // return ( null ) ; // we COULD skip the whole else block, but this makes the code clearer.
+        }
+      } 
+window.addEventListener('message', WebPage_message) ;
+
+console.log('in BODY of temp-converter.html 6, right before trying to load serviceworker '+NowISO8601() );
+
+      var theServiceWorker = null; 
+      serviceWorkerStart('./sw6.js',  './' );
+
+console.log('in BODY of temp-converter.html 6, right after trying to load serviceworker '+ NowISO8601()); 
+
+      //navigator.serviceWorker.addEventListener('message', WebPage_message) ;
+
+if(1==0){
       if('serviceWorker' in navigator) {
         promRegistration = navigator.serviceWorker.register('./sw6.js', { scope: './' })   ;
         promRegistration.then( (swRegistration)=>{
-          theAnswer=42;
-
+          theAnswer=42; 
           theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);
           console.log( ' after ORing swRegistration.waiting, .active. .installing',  theServiceWorker.constructor.name )
           // if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
@@ -155,6 +192,7 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
         alert('Could not start the serviceWorker.\nIf you are browsing inPrivate or inCognito, open a  regular browser window and try opening this page again.')
       }
       console.log('theAnswer ', theAnswer);
+}
     </script>
     
     <script>console.log('in BODY of temp-converter.html 6, right AFTER trying to load serviceWorker')</script>
@@ -171,9 +209,22 @@ It seems that manifest.json &gt; display: "browser" has no effect in MSEdge/Desk
 
        <input type="button" value="Kill ServiceWorker using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });" /> <br /> 
 
+       <input type="button" value="Send ServiceWorker message with no cmd" onclick="theServiceWorker.postMessage({ COMMAND:'goAway' , value:'now'  });" /> <br /> 
+
       </p>
+      <p><a href=".."> ..   (up one level in folder tree) </a>
 <p><a href="./temp-converter6.html?Joe=Mama">./temp-converter.html6?Joe=Mama</a></p>
 
+<p><a href="?CommandForServiceWorker=cacheList" > List cache serviceWorker using URL  </a></p>
+
+<!--
+        <ul  class="nowrap">
+            <li><a href="?TimePrecision=Second">TimeStamp.html?TimePrecision=Second</a> </li>
+            <li><a href="?BackgroundColor=tan&ForegroundColor=darkgreen">TimeStamp.html?BackgroundColor=tan&amp;ForegroundColor=darkgreen</a> for darkgreen on tan</li>
+            <li><a href="?BackgroundColor=orange&ForegroundColor=red&FontSize=200%25">TimeStamp.html?BackgroundColor=orange&amp;ForegroundColor=red&amp;FontSize=200%25</a> for red on orange with fonts 200% of regular size</li>
+            <li><a href="?UltraBasicTimesPrefix=Image&UltraBasicTimesSuffix=.JPG">TimeStamp.html?UltraBasicTimesPrefix=Image&amp;UltraBasicTimesSuffix=.JPG</a></li>
+        </ul>
+-->
 <p class="nowrap">Scratch area for your editing convenience<br />
   <!--In Edge on the laptop, Edge tries to "help" with the grammar.  There might be some no-spell-check flag https://www.geeksforgeeks.org/how-to-disable-spell-checking-from-input-box-and-textarea-in-html-forms/ -->
   <textarea rows="8" cols="64" class="scrollableXY"    spellcheck="false"

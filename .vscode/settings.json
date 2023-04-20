@@ -10,6 +10,9 @@
     "cert": "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.crt",
     "key":  "C:\\OpenSSL\\KEYS\\jackfruit\\jackfruit.key",
     "passphrase": ""
-  }
+  },
+  "cSpell.words": [
+    "serviceworker"
+  ]
 }
 
