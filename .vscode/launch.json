@@ -28,4 +28,13 @@
     }
   ]
 
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "PWALib_root in MSEdge",
+      "webRoot": "${workspaceFolder}",
+      "url": "https://herrings.yes--we-have-no-bananas.gov/"
+    }
+  ]
+}
 }
