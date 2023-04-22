@@ -5,8 +5,8 @@
   "version": "0.2.0",
   "configurations": [
   {
-    "name": "Launch Chrome",
-    "request": "launch",
+    "name": "Attach Chrome",
+    "request": "attach", //why doesn't this work with attach
     "type": "chrome",
     "url": "https://herrings.yes--we-have-no-bananas.gov/",
     "webRoot": "${workspaceFolder}"

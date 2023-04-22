@@ -41,7 +41,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
   // Constants and semi-constants.  All of these could be const  , but let allows for setting them in ServiceWorker_initialize()
-  let APP_NAME = 'Window+ServiceWorkerCommunicator';
+  let APP_NAME = 'WindowAndServiceWorkerCommunicator';
   let broadcastChannel = new BroadcastChannel( APP_NAME); 
         broadcastChannel.onmessage=ServiceWorker_message ;
   let swPostMessage = broadcastChannel.postMessage.bind(broadcastChannel);
@@ -51,7 +51,7 @@
       })
 
         broadcastChannel.close();
-  let VER='v.030' ;
+  let VER='v.031' ;
 
 
   let CACHE_TIMESTAMP_NAME = 'cache-time-stamp.txt';
@@ -105,7 +105,7 @@ function ServiceWorker_initialize(){
   self.addEventListener( 'message',     ServiceWorker_message);
   self.addEventListener( 'messageerror',ServiceWorker_messageError);
 
-  self.addEventListener()
+  self.addEventListener( 'statechange' ,ServiceWorker_stateChange)
 
 }
 ServiceWorker_initialize();
@@ -295,7 +295,10 @@ function ServiceWorker_messageError(eventMessageError){
 
 
 }
+function ServiceWorker_stateChange(eventStateChange){
+  console.log('serviceworker state change   new state is _' + screenLeft.state +'_ ' + NowISO8601()  );
 
+}
 
 // function ServiceWorker_install(event){
 //   console.log('In start of ServiceWorker_install  event listener for install  ' + VER +' ' + NowISO8601() );
@@ -352,7 +355,10 @@ async function cacheLoad(){
 
       console.log('  about to try await caches.open(CACHE_NAME)', CACHE_NAME);
       console.log('  the files to get ' , CACHE_FILES_LIST)
-    const cache = await caches.open(CACHE_NAME);
+      // the next line fails if you try to run it from VSCode>Debug>Launch
+      // Uncaught (in promise) DOMException: Failed to execute 'open' on 'CacheStorage': Unexpected internal error. 
+      //  see comment on https://stackoverflow.com/questions/64297126/service-worker-fails-on-caches-open
+    const cache = await   self.caches.open(CACHE_NAME);
       console.log('   just opened cache. It is of type ' , cache.constructor.name)
     
     let i=0;
