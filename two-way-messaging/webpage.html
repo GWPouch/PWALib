@@ -47,7 +47,7 @@
 
 const APP_NAME = 'Window+ServiceWorkerCommunicator';
 const broadcastChannel = new BroadcastChannel( APP_NAME);
-broadcastChannel.onmessage = WebPage_message ;
+broadcastChannel.onmessage = WebPage_message_BroadcastChannel.bind(broadcastChannel)  ;
 
 let theServiceWorker = null;
 let theServiceWorkerRegistration = null;
@@ -104,9 +104,20 @@ function writeMessageToString(event){
 } // end function writeMessageToString
 
 function WebPage_message(event){
-  console.log('Message event handler in webpage ' + NowISO8601() );
+  console.log('webpage.html  WebPage_message ' + NowISO8601() );
   console.log( writeMessageToString(event)  );
 }
+
+function WebPage_message_BroadcastChannel(event){
+  console.log('Message event handler in webpage.html WebPage_message_BroadcastChannel ' + NowISO8601() );
+  console.log( writeMessageToString(event)  );
+}
+function WebPage_message_Client(event){
+  console.log('Message event handler in webpage.html WebPage_message_Client ' + NowISO8601() );
+  console.log( writeMessageToString(event)  );
+}
+
+
 
 
 async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' , relScopeOfServiceWorker ='./' ){
@@ -122,20 +133,28 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
               theServiceWorkerRegistration = swRegistration;
               // two of the swRegistration .active .waiting .installing will be null. We probably get the value from  .waiting.
               theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);    
-              theServiceWorker.addEventListener('message', WebPage_message) ;
+              theServiceWorker.addEventListener('message', WebPage_message_Client) ;
               
               console.log('theServiceWorker is a ' + theServiceWorker.constructor.name );
               
                 //this sends a message to the serviceWorker 
-              theServiceWorker.postMessage({from:'html  .then() of ServiceWorker.register', what:'html page resolved serviceWorkerStart'})
+              theServiceWorker.postMessage({from:'webpage.html  ServiceWorker.register.then()',
+                                            what:'html page resolved serviceWorkerStart',
+                                            how:'theServiceWorker.postMessage(.....)',
+                                            when:NowISO8601()
+                                          })
                 //this sends a message to this window.
-              window.postMessage({from:'html', what:'finished registering service worker', when: NowISO8601()}  );
+              window.postMessage({from:'webpage.html', 
+                                  what:'finished registering service worker', 
+                                  how:'window.postMessage',
+                                  when: NowISO8601()
+                                 }  );
                 // if(swRegistration.active){ theServiceWorker = swRegistration.active ; }
                 // if(swRegistration.installing) { theServiceWorker = swRegistration.installing ; }
                 // if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
             } 
            ); // end of .then() on promise-of-registration of serviceWorker 
-           console.log('serviceWorker registration started ' +VER +NowISO8601() ); 
+           console.log('serviceWorker registration started ' + VER + ' '+ NowISO8601() ); 
         } else {
           console.log('ServiceWorker not available')
         }
@@ -143,7 +162,7 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
       
 
   function startServiceWorkerAndMessaging(){
-    window.addEventListener('message', WebPage_message );
+    window.addEventListener('message', WebPage_message_Client );
     serviceWorkerStart('./serviceworker-skeleton.js'  ); //which adds the WebPage_message listener to the ServiceWorker
   }
 
@@ -151,7 +170,10 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 </script>
 <body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorkerRegistration.unregister()"  >
   <h1>Two-way messaging with a ServiceWorker</h1>
-  <input type="button" value="Inquire VER" onclick="theServiceWorker.postMessage({cmd:'inquire:VER;inquire:APP_NAME;   spaces:    '})" />
+  <input type="button" value="Inquire VER" onclick="theServiceWorker.postMessage({
+     cmd:'inquire:VER;inquire:APP_NAME;   spaces:    ',
+     from:document.location.href +' button_click', when:NowISO8601()
+     })" />
 
   <input type="button" value="List cache pages using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
 </body>

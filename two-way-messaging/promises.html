@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Promises testbed</title>
+  <script>
+    class PromiseWithState extends Promise{
+      //status   one pending   resolved  rejected
+      // isSettled   true if status is resolved or rejected
+      // isPending    true if status is pending
+       STATE_PENDING =  'pending';
+       STATE_RESOLVED = 'resolved';
+       STATE_REJECTED = 'rejected';
+      #status = STATE_PENDING;
+      // in the constructors, modify the reject and resolve functions to write the#status then call resolve or reject as needed.
+
+
+    }
+
+function runInParallel(){
+  // modified from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled 
+  const promise1 = Promise.resolve(3);
+  const promise2 = new Promise((resolve, reject) => setTimeout(reject, 100, 'foo'));
+  const promises = [promise1, promise2];
+
+  Promise.allSettled(promises).
+   then((results) => results.forEach((result) => {
+     console.log(result.status,result.value);  
+    }
+                                  ));
+
+// Expected output:
+// "fulfilled"
+// "rejected"
+} // end example for allSettled 
+
+    function promises01(){
+//Promises Code Example 
+  let myPromise = new Promise(
+   (resolve, reject) => {
+     let time = Math.floor(10000 * Math.random() + 1); //'any random number between 1000-9000?
+     console.log(time);
+     setTimeout( 
+       () => {
+                if (time < 6000) {
+                  resolve("request successful " + time );
+                } else {
+                  reject("took too long " + time );
+                }
+              }, time);
+});
+
+console.log(myPromise,  myPromise.toString() ); //Promise {<pending>}     there does not seem to be a state property that resolves to pending|resolved|rejected 
+
+myPromise
+  .then((data) => {
+    console.log(myPromise); //Promise {<fulfilled>: 'request successful'}
+    console.log(data); // "request successful"
+  })
+  .catch((error) => {
+    console.log(myPromise); //Promise {<rejected>: 'took too long'}
+    console.error(error); // "took too long"
+  });
+} // end promises01
+
+function  stackedCallbacks(){
+  //Code example with callbacks 
+//(This is sequential code)
+
+const delayedColorChange = (newColor, delay, doNext) => {
+    setTimeout(() => {
+        document.body.style.backgroundColor = newColor;
+        doNext && doNext();
+    }, delay)
+}
+delayedColorChange('red', 1000, () => {
+    delayedColorChange('orange', 1000, () => {
+        delayedColorChange('yellow', 1000, () => {
+            delayedColorChange('green', 1000, () => {
+                delayedColorChange('blue', 1000, () => {
+                    delayedColorChange('indigo', 1000, () => {
+                        delayedColorChange('violet', 1000, () => {
+                        })
+                    })
+                })
+            })
+        })
+    })
+});
+}
+
+
+
+
+
+let someFunction = promises01 ;
+
+  </script>
+</head>
+<body ondblclick="someFunction()"  onload="someFunction(); stackedCallbacks();">
+  <p> from https://blog.openreplay.com/promises-in-parallel/</p>
+</body>
+</html>
