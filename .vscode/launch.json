@@ -1,0 +1,30 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+  {
+    "name": "Launch Chrome",
+    "request": "launch",
+    "type": "chrome",
+    "url": "https://herrings.yes--we-have-no-bananas.gov/",
+    "webRoot": "${workspaceFolder}"
+  },
+    {
+      "type": "vscode-edge-devtools.debug",
+      "request": "launch",
+      "name": "VSCode embedded Launch Microsoft Edge and open the Edge DevTools",
+      "url": "https://herrings.yes--we-have-no-bananas.gov/",
+      "webRoot": "${workspaceFolder}"
+    },
+
+    {
+      "type": "msedge",
+      "request": "launch",
+      "name": "PWALib_root in MSEdge",
+      "webRoot": "${workspaceFolder}",
+      "url": "https://herrings.yes--we-have-no-bananas.gov/"
+    }
+  ]
+}
