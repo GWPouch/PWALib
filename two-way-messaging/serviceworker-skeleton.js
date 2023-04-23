@@ -227,18 +227,58 @@ function ServiceWorker_fetch(eventFetch){
 
     console.log('ServiceWorker_fetch event end  '+NowISO8601() );
 
-    function cloneRequestToNewURL(requestIN, urlIN) {
+    function cloneRequestToNewURL(requestOriginal, urlWanted) {
 // modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
 // requestIN    MUST be a Request object
-        let {
-          cache, credentials, headers, integrity, method,
-          mode, redirect, referrer, referrerPolicy, url, body
-        } = requestIN;
+        // let {
+        //   cache, credentials, headers, integrity, method,
+        //   mode, redirect, referrer, referrerPolicy, url, body
+        // } = requestOriginal;
+      let { // list of Request properties from MDN
+        body,
+        //bodyUsed,
+        cache,
+        credentials,
+        destination,
+        headers,
+        //integrity,
+        method,
+        mode,
+        redirect,
+        referrer,
+        referrerPolicy,
+        signal,
+        url
+      } = requestOriginal;
+
+
+        console.log('  original URL was ' + url );
+        console.log('  modified URL was ' + urlWanted);
         mode = 'same-origin';
-      return new Request(urlIN, {
-        cache, credentials, headers, integrity, method,
-        mode, redirect, referrer, referrerPolicy, body
-      })
+                  //{ 
+                  //   cache, credentials, headers, integrity, method,
+                  //   mode, redirect, referrer, referrerPolicy, body
+                  // }
+       return new Request(urlWanted, 
+             { // list of Request properties from MDN
+                body,
+                //bodyUsed, //seems like an internal property
+                cache,
+                credentials,
+                destination,
+                headers,
+                //integrity, //seems like an internal property
+                method,
+                mode,
+                redirect,
+                referrer,
+                referrerPolicy,
+                signal //,
+                      // url
+             }       
+      
+      
+      )
     } 
 
 } // end of ServiceWorker_fetch
