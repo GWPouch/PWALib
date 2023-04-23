@@ -8,7 +8,6 @@
 </head>
 <script id="idSCRIPTDebuggingHelper010">
   const LF = "\n";
-  const VER='v.031'
   function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
 
   function describeObject(obj){
@@ -46,8 +45,14 @@
 <script id="idSCRIPTServiceWorker030">
 
 const APP_NAME = 'Window+ServiceWorkerCommunicator';
-const broadcastChannel = new BroadcastChannel( APP_NAME);
-broadcastChannel.onmessage = WebPage_message_BroadcastChannel.bind(broadcastChannel)  ;
+const VER = 'v.031'
+const APPandVER = APP_NAME + ' '+VER;
+let broadcastChannel = new BroadcastChannel( APP_NAME);
+broadcastChannel.onmessage = WebPage_message_BroadcastChannel  ;
+broadcastChannel.postMessage({from:'webpage.html' , about: 'test message'});
+
+console.log('html broadcastChannel is '+ broadcastChannel.name )
+
 
 let theServiceWorker = null;
 let theServiceWorkerRegistration = null;
@@ -162,19 +167,56 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
       
 
   function startServiceWorkerAndMessaging(){
-    window.addEventListener('message', WebPage_message_Client );
+    writeFileInfo('');
+    //window.addEventListener('message', WebPage_message_Client );
+    //addEventListener('message', WebPage_message_Client );
+    navigator.serviceWorker.onmessage = WebPage_message_Client;
+    
     serviceWorkerStart('./serviceworker-skeleton.js'  ); //which adds the WebPage_message listener to the ServiceWorker
   }
-
-
 </script>
-<body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorkerRegistration.unregister()"  >
+
+
+<script id="idSCRIPTFileInfoForFooterGWP" title="Writes URL and LastModified into an HTML page.">
+
+  function writeFileInfo(idOfTarget){
+    // this fails if the idOfTarget doesn't exist.
+    if("" == idOfTarget){
+      idOfTarget= "id"+ (new Date() ).getTime() ;  // .getTime()  is equivalent to .valueOf(), and is rather poorly-named
+    }
+
+    try {
+      var dteModified = (new Date(document.lastModified) );         
+      document.getElementById(idOfTarget).innerHTML =    
+         "Page was opened as <br /> " + 
+         document.URL +" <br/><br/>" +
+         "LastModified &nbsp;&nbsp;&nbsp; " +  dteModified.toISOString() + " &nbsp;&nbsp;&nbsp;&nbsp; " +   dteModified.toString()  +'<br />' +
+         "Loaded at " + (new Date() ).toISOString();           
+    } catch (error) {
+      // If we could not find a matching element, add a P element at the end
+       let elm = document.createElement("p");
+       elm.id=idOfTarget ;
+       document.body.appendChild( elm );
+       writeFileInfo(idOfTarget) ;
+    }
+  }
+  
+</script><!-- end of idSCRIPTFileInfoForFooterGWP -->
+<script id="idSCRIPTGP0001">
+
+</script>  
+
+
+<body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"  >
   <h1>Two-way messaging with a ServiceWorker</h1>
-  <input type="button" value="Inquire VER" onclick="theServiceWorker.postMessage({
-     cmd:'inquire:VER;inquire:APP_NAME;   spaces:    ',
-     from:document.location.href +' button_click', when:NowISO8601()
+  <input type="button" value="Inquire VER" 
+    onclick="theServiceWorker.postMessage({
+      cmd:'inquire:VER ; inquire:APP_NAME ; inquire: CACHE_LIST ;    spaces:    ',
+      from:document.location.href +' button_click', 
+      when:NowISO8601()
      })" />
 
-  <input type="button" value="List cache pages using ServiceWorker" onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
+  <input type="button" value="List cache pages using ServiceWorker" 
+    onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
 </body>
 </html>

@@ -41,22 +41,26 @@
 ////////////////////////////////////////////////////////////////////////////////
 
   // Constants and semi-constants.  All of these could be const  , but let allows for setting them in ServiceWorker_initialize()
-  let APP_NAME = 'WindowAndServiceWorkerCommunicator';
+  let APP_NAME = 'Window+ServiceWorkerCommunicator';
+  let VER='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
+  let APPandVER = APP_NAME + ' '+ VER ;   
   let broadcastChannel = new BroadcastChannel( APP_NAME); 
         broadcastChannel.onmessage=ServiceWorker_message ;
-  let swPostMessage = broadcastChannel.postMessage.bind(broadcastChannel);
-      swPostMessage({from:'ServiceWorker '+self.location.href ,
+  console.log('serviceworker broadcastChannel is '+ broadcastChannel.name )
+
+  // let postMessage_BroadcastChannel = broadcastChannel.postMessage.bind(broadcastChannel);
+      postMessage_BroadcastChannel({from:'ServiceWorker '+self.location.href ,
                      how: 'broadcastChancel for ' + broadcastChannel.name,
                      when:NowISO8601() 
       })
 
         broadcastChannel.close();
-  let VER='v.031' ;
+  
 
 
   let CACHE_TIMESTAMP_NAME = 'cache-time-stamp.txt';
   // these come from https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps-chromium/how-to/
-  let CACHE_NAME ='JoeMamaCache';   APP_NAME + VER;
+  let CACHE_NAME =  APP_NAME + VER;  //'JoeMamaCache'; //  APP_NAME + VER;
   let CACHE_FILES_LIST = [
     './MajorGeneralSong.html',
     './webpage.html',
@@ -89,11 +93,16 @@ function ServiceWorker_initialize(){
   // set 'global' variables (accessible only to the ServiceWorker and its children)
 
   APP_NAME=  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
-    broadcastChannel = new BroadcastChannel(APP_NAME);
+  VER = 'v.031'; // this MUST come before setting up the broadcast channel and 
+                 //     sending out a test message, because we use VER in the adorned message
+  APPandVER = APP_NAME + ' '+ VER ;
+  
+  broadcastChannel = new BroadcastChannel(APP_NAME);
     broadcastChannel.onmessage=ServiceWorker_message ;
-  swPostMessage = broadcastChannel.postMessage.bind(broadcastChannel);
-  swPostMessage({what:'serviceWorker just started the broadcastChannel ' + APP_NAME })
-  VER = 'v.030'
+    console.log('sw broadcastChannel is '+ broadcastChannel.name )
+  //postMessage_BroadcastChannel = broadcastChannel.postMessage.bind(broadcastChannel);
+  postMessage_BroadcastChannel({what:'serviceWorker just started the broadcastChannel ' + APP_NAME })
+  
 
   //attach eventListeners    I find named functions much easier to debug than arrow functions with odd indentation.
 
@@ -153,11 +162,8 @@ function ServiceWorker_activate(eventActivate){
   //  
   // clean up old caches, maybe transferring their contents to new caches
   console.log( 'ServiceWorker_activate start', self.state,  NowISO8601());
-  // let lst = self.clients
-  // for(let cli of lst){
-
-  // }
-
+      console.log('about to send message using postMessage_ALLClients')
+      postMessage_ALLClients({what: 'ServiceWorker_activate'})
   console.log( 'ServiceWorker_activate end', NowISO8601());
 }
 
@@ -165,9 +171,53 @@ function ServiceWorker_fetch(eventFetch){
   // The Fetch  event is the main point of a service worker, and 
   //   happens a lot. Every time the page tries to load something from the dominion claimed in serviceWorker.register()
   // you can watch and edit URLs, return synthetic responses like building a graph in a PNG or altering HTML or CSS...
-  console.log(APP_NAME + ' ' + VER + ' fetch event for ' + eventFetch.request.url , NowISO8601());
-}
+  let txtMsg ='message for console.log and postMessage and such';
+  txtMsg = 'serviceworker fetch event in ' + APP_NAME + ' ' + VER + ' for ' + eventFetch.request.url + ' at ' + NowISO8601()
+  console.log(txtMsg );
 
+  //allow URL commands to work like postMessage({cmd:SomeCommand})
+  
+  let theURL = new URL(eventFetch.request.url );
+    const K_strServiceWorkerCommand='QqServiceWorkerCommandQq';
+    if( theURL.searchParams.has(K_strServiceWorkerCommand) ){
+      // maybe getAll for more elaborate URLs
+      let cmd = decodeURIComponent( theURL.searchParams.get(K_strServiceWorkerCommand) );
+      //? maybe delete the searchParameter and pass this along to the RespondWith bit
+      theURL.searchParams.delete(K_strServiceWorkerCommand);
+      console.log('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ VER +' ' + NowISO8601()  );
+      processCommands( cmd );
+      // at this point, we could exit by returning, 
+      // or continue on to respondWith bit. 
+      // return ; //this might be a terrible exit
+    }
+
+    eventFetch.respondWith(
+      (async () => {
+         const cache = await caches.open(CACHE_NAME);
+  
+        // Get the resource from the cache.
+        const cachedResponse = await cache.match(eventFetch.request, optionsForMatch);
+        if (cachedResponse) {
+          console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
+          return cachedResponse;
+        } else {
+            try {
+              // If the resource was not in the cache, try the network.
+              const fetchResponse = await fetch(eventFetch.request);
+              console.log( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
+                  // DOES NOT CACHE retrieved files not in the initial list.
+                  // // Save the resource in the cache and return it.
+                  // cache.put(event.request, fetchResponse.clone());
+              return fetchResponse;
+            } catch (e) {
+              // The network failed
+               console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ VER  + ' FAILED '   + error );
+            }
+        }
+    })());
+
+    console.log('ServiceWorker_fetch event end  '+NowISO8601() );
+} // end of ServiceWorker_fetch
 
 async function processCommands(strCommand){
   let cmd = strCommand;
@@ -182,22 +232,33 @@ async function processCommands(strCommand){
       for(let j=0; j<subparts.length;j++){ subparts[j]=subparts[j].trim() }
     console.log(i, subparts, NowISO8601());
     
-    cmd=subparts[0];
+    cmd       = subparts[0];
     
     switch ( cmd  ) {
       case 'inquire':
-        switch (subparts[1]) {
-          case 'APP_NAME':
-              swPostMessage( {about:'reply to inquire', topic: 'APP_NAME', value: APP_NAME} )
+        let question = subparts[1];
+        let answer   = 'some string answer'
+        switch ( question ) {
+          case 'APP_NAME': 
+              answer = APP_NAME;
             break;
           case 'CACHE_NAME':
-            
+              answer = CACHE_NAME;
+            break;
+          case 'VER':
+          case 'VERSION':
+              answer = VER;
             break;
           case 'CACHE_DATE':
             
+              // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
+              //answer = 
             break;
           case 'CACHE_LIST':
-            
+              let listOfURLs =  await listCachedURLs(CACHE_NAME) ;
+              let strTmp = listOfURLs.toString() ;
+              answer = 'The cached URLs in ' + CACHE_NAME + ' are \n' + 
+               strTmp.split(',').join(LF) + NowISO8601() + LF ;
             break;
           case 'ALL':
             
@@ -206,6 +267,9 @@ async function processCommands(strCommand){
           default:
             break;
         }// end switch on inquire-->subtopic
+        console.log(question,answer);
+        //broadcastChannel.postMessage({about:'reply to inquire', topic: question, value: answer })
+        postMessage_BroadcastChannel( {about:'reply to inquire', topic: question, value: answer } )
 
       break;
 
@@ -213,10 +277,11 @@ async function processCommands(strCommand){
   
         break;
       case 'cacheList':
-            console.log('sw cacheList '+ VER +' ' + NowISO8601() + LF);
-            console.log( CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
-          await listCachedURLs() ;
-            console.log('end sw cacheList '+ VER +' ' + NowISO8601() + LF);
+            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + VER +' ' + NowISO8601() + LF);
+            console.log('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
+          let strArrCachedURLs =   await listCachedURLs(CACHE_NAME) ;
+            console.log('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
+            console.log('end sw message_cmd cacheList '+ VER +' ' + NowISO8601() + LF);
         break;    
   
       case 'cacheRefresh':
@@ -300,51 +365,7 @@ function ServiceWorker_stateChange(eventStateChange){
 
 }
 
-// function ServiceWorker_install(event){
-//   console.log('In start of ServiceWorker_install  event listener for install  ' + VER +' ' + NowISO8601() );
-//  //  function postMessage does not exist postMessage( {from:'ServiceWorker', what: 'install event handler', when:NowISO8601() } )  
-//   sendMessageToALLClients({from:'Service Worker', when: NowISO8601(), what:'install finished'})
-// } // end of ServiceWorker_install
 
-function z_swPostMessage(objMessage){
-// replacement for postMessage.  
-
-    // the following looks like it should work, but it fails with Uncaught TypeError TypeError: Illegal invocation at (program) (C:\Users\Public\Documents\WebApps\PWALib\two-way-messaging\serviceworker-skeleton.js:85:3)
-    //   let broadcastChannel = new BroadcastChannel( APP_NAME); 
-    //   broadcastChannel.onmessage=ServiceWorker_message ;
-    // let swPostMessage = broadcastChannel.postMessage;
-    //   broadcastChannel.close();
-
-    broadcastChannel.postMessage(objMessage)
-
-
-}
-
-
-
-
-function sendMessageToALLClients(objMessage){
-  // from https://felixgerschau.com/how-to-communicate-with-service-workers/
-  let matchOptions = {  includeUncontrolled: true,   type: 'window'}
-  self.clients.matchAll(  matchOptions)
-  .then( 
-    (clients) => {
-      if (clients && clients.length) {
-        // Send a response - the clients
-        // array is ordered by last focused
-        clients[0].postMessage({
-          type: 'REPLY_COUNT',
-          count: ++count,
-        });
-       } 
-    });
-  
-}
-
-
-// self.addEventListener('install', ServiceWorker_install);
-// self.addEventListener('message', ServiceWorker_message);
-// broadcastChannel.onmessage = ServiceWorker_message ;
 
 async function cacheLoad(){
   console.log('start of cacheLoad in serviceWorker', NowISO8601() )
@@ -390,8 +411,9 @@ async function cacheLoad(){
         // this should only happen if a cached CACHE_TIMESTAMP_NAME is already there
       }
       
-      await listCachedURLs(CACHE_NAME);
-      
+      // await list CachedURLs(CACHE_NAME);
+      let strArrCachedURLs = await listCachedURLs(CACHE_NAME);
+      console.log(strArrCachedURLs.toString().split(',').join(LF) ) ;
       return ( nLoaded )   ;  // because this is async, we're in a promise. Chrome REALLY wants us to return something
       
 
@@ -425,7 +447,7 @@ async function cacheLoad(){
 }
 
 async function listCachedURLs(nameOfCache){
-  if( (null===nameOfCache) ||
+  if( (null === nameOfCache) ||
       (undefined === nameOfCache) ||
       (''=== nameOfCache) ){
       nameOfCache = CACHE_NAME
@@ -435,11 +457,68 @@ async function listCachedURLs(nameOfCache){
 
   let cache = await caches.open(nameOfCache);
       // co1n sole.log( 'cache is now of type ' + cache.constructor.name +'  ' + VER +' ' + NowISO8601() );
-  let theKeys = await cache.keys() ;
+  let theRequests = await cache.keys() ;
       // co1n sole.log( 'theKeys is now of type ' + theKeys.constructor.name + ' ' + theKeys.length  + ' '  + VER +' ' + NowISO8601() );
-  let req ; //= new Request("https://www.weather.gov");
-  
-  console.log('List of URLs that are in cache ' + VER +' ' + NowISO8601() );
-  theKeys.forEach( (rq)=>{ console.log('  ' + rq.url) } )
-  console.log( NowISO8601(),LF);
+  let retVal = new Array(theRequests.length);
+  let i= 0;
+  theRequests.forEach( (rq)=>{
+      retVal[i] = rq.url;
+      i++; 
+    } )
+  return ( retVal ) ;
+
+  // console.log('List of URLs that are in cache ' + VER +' ' + NowISO8601() );
+  // theRequests.forEach( (rq)=>{ console.log('  ' + rq.url) } )
+  // console.log( NowISO8601(),LF);
 } // end of async function listCachedURLs(nameOfCache)
+
+function addSourceAndTimeToMessageObject(objMessage){
+  objMessage.from='ServiceWorker ' + APP_NAME + ' ' + VER   ;
+  objMessage.fromURL=this.location.href;
+  objMessage.when=NowISO8601();
+  
+  return( objMessage ) ;// in case callerBoy use   let fixedMessage=addSourceAndTimeToMessageObject(   )
+}
+
+function postMessage_BroadcastChannel(objMessage){
+  //appends some source properties for debugging use, then posts using broadcastChannel API
+  addSourceAndTimeToMessageObject(objMessage);
+
+  objMessage.how='BroadcastChannel '+ broadcastChannel.name;
+
+  broadcastChannel.postMessage(objMessage);
+}
+
+function postMessage_ALLClients(objMessage){
+  // from https://felixgerschau.com/how-to-communicate-with-service-workers/
+  
+  let matchOptions = {  includeUncontrolled: true,   type: 'window'}
+
+  addSourceAndTimeToMessageObject(objMessage);
+  objMessage.how='Client postMessage';
+  
+  console.log('in postMessage_ALLClients ' + JSON.stringify(objMessage) );  
+
+  self.clients.matchAll(  matchOptions)
+  .then( 
+    (clients) => {
+      console.log(clients);
+      if (clients && clients.length) { // this is a check for clients exists and clients has elements
+        console.log (clients.length )
+        // Send a response - the clients
+        // array is ordered by last focused
+        clients.forEach(
+            ( client ) =>{ 
+                client.postMessage(objMessage)
+            } 
+        );
+        // clients[0].postMessage({
+        //   type: 'REPLY_COUNT',
+        //   count: ++count,
+        // });
+       } 
+    });
+  
+}
+
+
