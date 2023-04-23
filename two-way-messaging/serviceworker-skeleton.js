@@ -171,6 +171,8 @@ function ServiceWorker_fetch(eventFetch){
   // The Fetch  event is the main point of a service worker, and 
   //   happens a lot. Every time the page tries to load something from the dominion claimed in serviceWorker.register()
   // you can watch and edit URLs, return synthetic responses like building a graph in a PNG or altering HTML or CSS...
+  let reqCopy = eventFetch.request.clone();
+
   let txtMsg ='message for console.log and postMessage and such';
   txtMsg = 'serviceworker fetch event in ' + APP_NAME + ' ' + VER + ' for ' + eventFetch.request.url + ' at ' + NowISO8601()
   console.log(txtMsg );
@@ -187,23 +189,30 @@ function ServiceWorker_fetch(eventFetch){
       console.log('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ VER +' ' + NowISO8601()  );
       processCommands( cmd );
       // at this point, we could exit by returning, 
-      // or continue on to respondWith bit. 
+      // or continue on to respondWith bit.
+      console.log(theURL.href);
+      reqCopy =cloneRequestToNewURL( reqCopy,  (theURL.href) ); 
       // return ; //this might be a terrible exit
     }
 
+    let optionsForMatch = { 
+      ignoreSearch:true, 
+      ignoreMethod: false, 
+      ignoreVary:false 
+    } ;
     eventFetch.respondWith(
       (async () => {
          const cache = await caches.open(CACHE_NAME);
-  
+        
         // Get the resource from the cache.
-        const cachedResponse = await cache.match(eventFetch.request, optionsForMatch);
+        const cachedResponse = await cache.match(reqCopy, optionsForMatch);
         if (cachedResponse) {
           console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
           return cachedResponse;
         } else {
             try {
               // If the resource was not in the cache, try the network.
-              const fetchResponse = await fetch(eventFetch.request);
+              const fetchResponse = await fetch(reqCopy);
               console.log( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
                   // DOES NOT CACHE retrieved files not in the initial list.
                   // // Save the resource in the cache and return it.
@@ -217,6 +226,21 @@ function ServiceWorker_fetch(eventFetch){
     })());
 
     console.log('ServiceWorker_fetch event end  '+NowISO8601() );
+
+    function cloneRequestToNewURL(requestIN, urlIN) {
+// modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
+// requestIN    MUST be a Request object
+        let {
+          cache, credentials, headers, integrity, method,
+          mode, redirect, referrer, referrerPolicy, url, body
+        } = requestIN;
+        mode = 'same-origin';
+      return new Request(urlIN, {
+        cache, credentials, headers, integrity, method,
+        mode, redirect, referrer, referrerPolicy, body
+      })
+    } 
+
 } // end of ServiceWorker_fetch
 
 async function processCommands(strCommand){
@@ -472,6 +496,10 @@ async function listCachedURLs(nameOfCache){
   // console.log( NowISO8601(),LF);
 } // end of async function listCachedURLs(nameOfCache)
 
+
+
+
+// All of these postMessage functions accept only the first, plain object, and do not handle target origin, or transferable objects.
 function addSourceAndTimeToMessageObject(objMessage){
   objMessage.from='ServiceWorker ' + APP_NAME + ' ' + VER   ;
   objMessage.fromURL=this.location.href;
@@ -521,4 +549,9 @@ function postMessage_ALLClients(objMessage){
   
 }
 
+function postMessageALL(objMessage){
+  postMessage_ALLClients(objMessage);
+  postMessage_BroadcastChannel(objMessage);
+  // this does NOT use the MessageChannel API   which looks too complicated.
 
+}

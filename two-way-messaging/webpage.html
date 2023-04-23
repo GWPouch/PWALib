@@ -209,6 +209,8 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 
 <body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"  >
   <h1>Two-way messaging with a ServiceWorker</h1>
+   <p><a href="?QqServiceWorkerCommandQq=cacheList" >Access information using URL</a></p> 
+
   <input type="button" value="Inquire VER" 
     onclick="theServiceWorker.postMessage({
       cmd:'inquire:VER ; inquire:APP_NAME ; inquire: CACHE_LIST ;    spaces:    ',
