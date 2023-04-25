@@ -1,5 +1,3 @@
-"use strict";
-
 
 //  manually killing serviceWorkers can be accomplished with 
 //     edge://serviceworker-internals/   or some such
@@ -112,14 +110,7 @@ function ServiceWorker_initialize(){
   self.addEventListener( 'install',     ServiceWorker_install) ;
   self.addEventListener( 'activate',    ServiceWorker_activate);
 
-  self.addEventListener( 'fetch',       ServiceWorker_fetch_begin);
-  self.addEventListener( 'fetch',       ServiceWorker_fetch_inquire);
-  self.addEventListener( 'fetch',       ServiceWorker_fetch_command);
-  self.addEventListener( 'fetch',       ServiceWorker_fetch_typical);
-//self.addEventListener( 'fetch',       ServiceWorker_fetch_finish);
-
-  //  self.addEventListener( 'fetch',       ServiceWorker_fetch);
-  
+  self.addEventListener( 'fetch',       ServiceWorker_fetch);
   self.addEventListener( 'message',     ServiceWorker_message);
   self.addEventListener( 'messageerror',ServiceWorker_messageError);
 
@@ -207,7 +198,7 @@ function ServiceWorker_fetch(eventFetch){
     }
 
     let optionsForMatch = { 
-      ignoreSearch:false, //  true to ignore the searchString, false to get a different result for each searchString, 
+      ignoreSearch:true, 
       ignoreMethod: false, 
       ignoreVary:false 
     } ;
@@ -219,7 +210,7 @@ function ServiceWorker_fetch(eventFetch){
         const cachedResponse = await cache.match(reqCopy, optionsForMatch);
         if (cachedResponse) {
           console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
-          return cachedResponse; //  
+          return cachedResponse;
         } else {
             try {
               // If the resource was not in the cache, try the network.
@@ -238,242 +229,69 @@ function ServiceWorker_fetch(eventFetch){
 
     console.log('ServiceWorker_fetch event end  '+NowISO8601() );
 
+    function cloneRequestToNewURL(requestOriginal, urlWanted) {
+// modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
+// requestIN    MUST be a Request object
+        // let {
+        //   cache, credentials, headers, integrity, method,
+        //   mode, redirect, referrer, referrerPolicy, url, body
+        // } = requestOriginal;
+      let { // list of Request properties from MDN 2023-04-23
+        body,
+        //bodyUsed, // seems like an internal property set based on body
+        cache,
+        credentials,
+        destination,
+        headers,
+        //integrity, // this is likely a cryptographic hash set internally.
+        method,  // get post header ...
+        mode,
+        redirect,
+        referrer,
+        referrerPolicy,
+        signal,
+        url
+      } = requestOriginal;
+
+
+        console.log('  original URL was ' + url );
+        console.log('  modified URL was ' + urlWanted);
+        mode = 'same-origin';
+                  //{ 
+                  //   cache, credentials, headers, integrity, method,
+                  //   mode, redirect, referrer, referrerPolicy, body
+                  // }
+       return new Request(urlWanted, 
+             { // list of Request properties from MDN
+                body,
+                //bodyUsed, //seems like an internal property
+                cache,
+                credentials,
+                destination,
+                headers,
+                //integrity, //seems like an internal property
+                method,
+                mode,
+                redirect,
+                referrer,
+                referrerPolicy,
+                signal //,
+                      // url
+             }       
+      
+      
+      )
+    } 
 
 } // end of ServiceWorker_fetch
 
 
 
 
-function cloneRequestToNewURL(requestOriginal, urlWanted) {
-  // modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
-  // requestIN    MUST be a Request object
-        let { // alphabetized list of Request properties from MDN 2023-04-23
-          body,
-          //bodyUsed, // seems like an internal property set based on body
-          cache,
-          credentials,
-          destination,
-          headers,
-          //integrity, // this is likely a cryptographic hash set internally.
-          method,  // get post header ...
-          mode,
-          redirect,
-          referrer,
-          referrerPolicy,
-          signal,
-          url
-        } = requestOriginal;
-  
-  
-          console.log('  original URL was ' + url );
-          console.log('  modified URL was ' + urlWanted);
-          mode = 'same-origin';
-              
-         return new Request(urlWanted, 
-               { // list of Request properties from MDN
-                  body,
-                  //bodyUsed, //seems like an internal property
-                  cache,
-                  credentials,
-                  destination,
-                  headers,
-                  //integrity, //seems like an internal property
-                  method,
-                  mode,
-                  redirect,
-                  referrer,
-                  referrerPolicy,
-                  signal //,
-                        // url
-               }       
-        
-        
-        )
-      } 
-  
-
-
-
-function ServiceWorker_fetch_typical(eventFetch){
-  // this fetch handler returns files from the cache, or from  the web, and is what you would typically see
-  
-  let txtMsg ='message for console.log and postMessage and such';
-  txtMsg = 'ServiceWorker_fetch_typical for fetch event in ' + APPandVER +' for request.url= ' + eventFetch.request.url + ' at ' + NowISO8601()
-  console.log(txtMsg );
-
-  if(eventFetch.replies.length){
-    let retVal='';
-    // for(let i=0; i<eventFetch.replies.length;i++){
-    //   retVal= retVal+LF+eventFetch.replies[i];
-    // }
-    eventFetch.replies.forEach((line)=>{retVal = retVal +LF +line;  console.log(line)   })
-    eventFetch.respondWith(new Response(retVal));
-return;
-  }
 
 
 
 
-  let optionsForMatch = { 
-    ignoreSearch:false, //  true to ignore the searchString, false to get a different result for each searchString, 
-    ignoreMethod: false, 
-    ignoreVary:false 
-  } ;
-  eventFetch.respondWith(
-    (async () => {
-       const cache = await caches.open(CACHE_NAME);
-      
-      // Get the resource from the cache.
-      const cachedResponse = await cache.match(eventFetch.request, optionsForMatch);
-      if (cachedResponse) {
-        console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
-        return cachedResponse; //  
-      } else {
-          try {
-            // If the resource was not in the cache, try the network.
-            const fetchResponse = await fetch(eventFetch.request);
-            console.log( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
-                // DOES NOT CACHE retrieved files not in the initial list.
-                // // Save the resource in the cache and return it.
-                // cache.put(event.request, fetchResponse.clone());
-            return fetchResponse;
-          } catch (e) {
-            // The network failed
-             console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ VER  + ' FAILED '   + error );
-          }
-      }
-  })());
-
-  console.log('ServiceWorker_fetch_typical event end  ' + NowISO8601() );
-
-
-}
-
-function ServiceWorker_fetch_begin(eventFetch){
-  eventFetch.replies=[];// add an array property to the fetch event. We can't append 
-                        // to a response from eventFetch.respondWith, so we'll build 
-                        //  an array of strings using event.fetch.push('next message') 
-                        //   then merge them into one big string at the end and respondWith( composite string )
-}
-
-
-function ServiceWorker_fetch_command(eventFetch){
-    
-    console.log(' in ServiceWorker_fetch_command', eventFetch.request.url)
-    let txtURL = eventFetch.request.url.toString() ;// request.url  can be string, or a URL object
-    let txtURLLowerCase = txtURL.toLowerCase();
-    const K_strServiceWorkerCommand='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+VER+'Qq'   ;
-    if( ( txtURLLowerCase.includes('??help')    )  ||
-        ( txtURLLowerCase.includes('???')       )  ||
-        ( txtURLLowerCase.includes('??command') )  ||
-        ( txtURLLowerCase.includes('??cmd')     )   
-      )
-     {
-      eventFetch.replies.push('Commands to the ServiceWorker look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand + '=CommandForTheServiceWorker , like '+K_strServiceWorkerCommand + '=goAway')
-     } 
-
-
-}
-
-
-async function ServiceWorker_fetch_inquire(eventFetch){
-  console.log(' in ServiceWorker_fetch_inquire', eventFetch.request.url)
-  // A long inquire string is good because it's unlikely to collide, but is hard to type and can cause other problems with URI-encoding
-  const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+VER+'Qq')   ;
-  const K_strServiceWorkerInquire_esc  = encodeURIComponent(K_strServiceWorkerInquire_RAW);
-
-
-  let txtURL = eventFetch.request.url.toString() ;// request.url  can be string, or a URL object
-  let txtURLLowerCase = txtURL.toLowerCase();
-
-  if( ( txtURLLowerCase.includes('??help')  )    ||
-      ( txtURLLowerCase.includes('???')  )       ||
-      ( txtURLLowerCase.includes('??inquiry')  ) ||
-      ( txtURLLowerCase.includes('??inquire')  ) ||
-      ( txtURLLowerCase.includes('??enquire')  )  
-    )
-   {
-    eventFetch.replies.push('Inquiries to the ServiceWorker look like ?'+ K_strServiceWorkerInquire_esc + '=InquiryForTheServiceWorker , like '+K_strServiceWorkerInquire_esc + '=CACHE_DATE')
-    // eventFetch.respondWith( new Response( 
-    //   'Inquiries to the ServiceWorker look like\n ./PageThatDoesNotExist.html?'+ K_strServiceWorkerInquire + '=InquiryForTheServiceWorker , like '+K_strServiceWorkerInquire + '=CACHE_DATE'  
-    // ))
-    // console.log('Inquiries look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand + '=CommandForTheServiceWorker'  )
-  }
-  if(  (txtURL.indexOf(K_strServiceWorkerInquire_esc)) === -1   ){
-    
-    // DO NOT CALL respondWith more than once. It REALLY messes with the caching.   eventFetch.respondWith( new Response('second response'))
-return ;
-  }
-  // the URL looks like 
-  //  somePage.html?QqServiceWorkerInquireQq=cacheDelete   
-  //  somePage.html?QqServiceWorkerInquireQq=cacheAddPage%3Ahttps%3A%2F%2Fherrings.yes--we-have-no-bananas.gov%2Ftwo-way-messaging%2Fwebpage.html
-  let theURL = new URL( txtURL );
-  for (const [key, value] of theURL.searchParams) {
-    console.log(key,value);
-  }
-
-
-    // maybe getAll for more elaborate URLs
-  let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
-    //? maybe delete the searchParameter and pass this along to the RespondWith bit
-    //theURL.searchParams.delete(K_strServiceWorkerCommand);
-    // or we can use respondWith to return a value???
-
-    //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
-    //  got bit by a + in the APP_NAME that turned into a space
-    console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inq + '    ' + APPandVER +' ' + NowISO8601()  );
-  let question = inq ;
-  let theParameters = '' ;
-  let answer = 'some string reply';
-  if(inq.includes(':')){
-    let ndx = inq.indexOf(':')
-    question = inq.substring(0,ndx).trim();
-    theParameters = inq.substring(ndx+1);
-    console.log(question, theParameters);
-  }  
-  switch ( question ) {
-    case 'APP_NAME': 
-        answer = APP_NAME ;
-      break;
-    case 'CACHE_NAME':
-        answer = CACHE_NAME;
-      break;
-    case 'VER':
-    case 'VERSION':
-        answer = VER;
-      break;
-    case 'CACHE_DATE':
-
-      answer='Bob';
-
-
-
-      // eventFetch.waitUntil( 
-        answer = await cacheGetDate()
-        //  )
-      console.log(answer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
-
-// console.log(answer, NowISO8601()),`before eventFetch.waitUntil(   cacheGetDate()  );`;
-//       eventFetch.waitUntil(   cacheGetDate()  );
-// console.log(answer, NowISO8601(), `after eventFetch.waitUntil(   cacheGetDate()  );`);      
-        //fetch(CACHE_TIMESTAMP_NAME).then( (response)=>response.text().then((txt)=>answer=txt)   )
-       // eventFetch.waitUntil(  cacheGetDate()   );
-
-      break;
-    case 'CACHE_LIST':
-        let listOfURLs =  await listCachedURLs(CACHE_NAME) ;
-        answer = listOfURLs.toString() ;
-      break;
-    case 'ALL':
-      
-      break;
-  
-    default:
-      break;
-  }// end switch on inquire-->subtopic
-  eventFetch.replies.push( question + ':'+answer  );
-  //eventFetch.respondWith(  new Response(answer) );
-} // end of ServiceWorker_fetch_inquire
 
 
 async function processCommands(strCommand){
@@ -666,7 +484,6 @@ async function cacheLoad(){
           new Response(  NowISO8601() )  ) ;
       } catch (error) {
         // this should only happen if a cached CACHE_TIMESTAMP_NAME is already there
-        console.log('error trying to put ' + CACHE_TIMESTAMP_NAME ,error)
       }
       
       // await list CachedURLs(CACHE_NAME);
@@ -730,65 +547,13 @@ async function listCachedURLs(nameOfCache){
   // console.log( NowISO8601(),LF);
 } // end of async function listCachedURLs(nameOfCache)
 
-async function cacheGetDate4() {
-  let dateOfCache='Alice';
- 
-// let response = await fetch('./' + CACHE_TIMESTAMP_NAME); // this seems to not trigger ServiceWorker_fetch_typical, so it doesn't hit the cache at all
-  console.log('in cacheGetDate')
-console.log(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
-  let cache = await self.caches.open(CACHE_NAME);
-  console.log(cache)
-console.log(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
-  let response = await cache.match(CACHE_TIMESTAMP_NAME);
-  console.log('response', CACHE_TIMESTAMP_NAME ,response)
-console.log(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
-
-  dateOfCache = await response.text();
-console.log(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
-
-  console.log('date returned',dateOfCache)
-  // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
-  return( dateOfCache );
-  
-}
-
-async function cacheGetDate() {
-  let dateOfCache='Alice';
- 
-let response0 = await fetch('./' + CACHE_TIMESTAMP_NAME); // this seems to not trigger ServiceWorker_fetch_typical, so it doesn't hit the cache at all
-
-console.log(response0,response0.text())
-
-
-
-console.log('in cacheGetDate')
-console.log(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
-  let cache = await self.caches.open(CACHE_NAME);
-  console.log(cache)
-console.log(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
-  let response = await cache.match(CACHE_TIMESTAMP_NAME);
-  console.log('response', CACHE_TIMESTAMP_NAME ,response)
-console.log(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
-
-  dateOfCache = await response.text();
-console.log(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
-
-  console.log('date returned',dateOfCache)
-  // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
-  return( dateOfCache );
-  
-}
-
-
-
-
 
 
 
 // All of these postMessage functions accept only the first, plain object, and do not handle target origin, or transferable objects.
 function addSourceAndTimeToMessageObject(objMessage){
   objMessage.from='ServiceWorker ' + APP_NAME + ' ' + VER   ;
-  objMessage.fromURL=self.location.href;
+  objMessage.fromURL=this.location.href;
   objMessage.when=NowISO8601();
   
   return( objMessage ) ;// in case callerBoy use   let fixedMessage=addSourceAndTimeToMessageObject(   )

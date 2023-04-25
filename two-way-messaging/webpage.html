@@ -38,6 +38,19 @@
     return(retVal);
   } //end of describeObject
 
+  async function fetchTextAndWriteToElementValue(urlText , elmTarget, append = false ){
+    let retVal='';    
+    let response = await fetch(urlText);
+    if(!response.ok){
+       retVal = 'error fetching ' + urlText + ' ' + error;
+    } else{
+      retVal = await response.text();
+    } 
+    if(append){ retVal = elmTarget + retVal; }
+    elmTarget = retVal;
+
+    return ( retVal );
+  }
 
 </script>
 
@@ -165,8 +178,10 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
         }
       } 
       
-
+  let elmTextResults = null;
   function startServiceWorkerAndMessaging(){
+    elmTextResults = document.getElementById('idTEXTAREAresults');
+
     writeFileInfo('');
     //window.addEventListener('message', WebPage_message_Client );
     //addEventListener('message', WebPage_message_Client );
@@ -207,7 +222,11 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 </script>  
 
 
-<body onload="startServiceWorkerAndMessaging();"  onunload="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"  >
+<body onload="startServiceWorkerAndMessaging();"    >
+  <!--
+    onunload="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"
+
+  -->
   <h1>Two-way messaging with a ServiceWorker</h1>
    <p><a href="?QqServiceWorkerCommandQq=cacheList" >Access information using URL</a></p> 
 
@@ -216,9 +235,41 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
       cmd:'inquire:VER ; inquire:APP_NAME ; inquire: CACHE_LIST ;    spaces:    ',
       from:document.location.href +' button_click', 
       when:NowISO8601()
-     })" />
+     }); " /> <br />
+<!--
+   console.log( encodeURIComponent('inquire:VER ; inquire:APP_NAME ; inquire: CACHE_LIST ;    spaces:    ')  )  
+  inquire%3AVER%20%3B%20inquire%3AAPP_NAME%20%3B%20inquire%3A%20CACHE_LIST%20%3B%20%20%20%20spaces%3A%20%20%20%20
+-->
+<!--
+  // I spun my wheels on 'why does the a-link trigger serviceWorker_fetch 
+        but the onclick=fetch() does not    for a long time.
+  // https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
+    explains it as 
+    The service worker's fetch event handler isn't being called the first time you load the page 
+    because the service worker hasn't yet "claimed" the page, meaning it's not under the service worker's control. 
+    By default, the first time you visit a site that registers a service worker, 
+    the service worker's install (and potentially activate) event handlers will run, 
+    but fetch won't get triggered until the service worker takes control. 
+    That happens the next time you navigate to a page under the service worker's scope, 
+    or if you reload the current page.
+    ...
 
+
+    so I added self.clients.claim to ServiceWorker_activate (which gets called quickly because ServiceWorker_install calls self-skipWaiting())
+      and it works perfectly.
+
+
+-->
+
+  <input type="button" value="Fetch" 
+     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow+ServiceWorkerCommunicatorQqv.031Qq=CACHE_DATE', elmTextResults) ;" /><br />
+  <a href="./PageThatDoesNotExist.html">./PageThatDoesNotExist.html</a>
   <input type="button" value="List cache pages using ServiceWorker" 
     onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
+
+  <textarea id="idTEXTAREAresults" title="Results displayed here"   ></textarea>  
+  <br/>
+  <input type="button" value="Kill ServiceWorker and Cache" onclick="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });" />
+
 </body>
 </html>
