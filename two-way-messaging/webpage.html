@@ -46,8 +46,9 @@
     } else{
       retVal = await response.text();
     } 
-    if(append){ retVal = elmTarget + retVal; }
-    elmTarget = retVal;
+    if(append){ retVal = elmTarget.value + LF+ retVal; }
+
+    elmTarget.value = retVal;
 
     return ( retVal );
   }
@@ -261,13 +262,21 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 
 -->
 
-  <input type="button" value="Fetch" 
-     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow+ServiceWorkerCommunicatorQqv.031Qq=CACHE_DATE', elmTextResults) ;" /><br />
-  <a href="./PageThatDoesNotExist.html">./PageThatDoesNotExist.html</a>
+  <input type="button" value="Fetch Version" 
+     onclick="let a=fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=VERSION', elmTextResults,true) ;  console.log(a); " /><br />
+    <input type="button" value="Fetch Date" 
+     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=CACHE_DATE', elmTextResults,true) ;" /><br />
+  <a href="./PageThatDoesNotExist.html">./PageThatDoesNotExist.html</a><br />
+
+
+
   <input type="button" value="List cache pages using ServiceWorker" 
     onclick="theServiceWorker.postMessage({ cmd:'cacheList' , value:'now'  });" /> <br /> 
 
-  <textarea id="idTEXTAREAresults" title="Results displayed here"   ></textarea>  
+  <textarea id="idTEXTAREAresults"
+    cols="80" rows="10" 
+    style="resize:none; overflow-y: scroll; overflow-x: scroll;"
+    title="Results displayed here"   ></textarea>  
   <br/>
   <input type="button" value="Kill ServiceWorker and Cache" onclick="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });" />
 

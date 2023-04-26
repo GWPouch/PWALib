@@ -390,7 +390,7 @@ return ;
           //   console.log(key,value);
           // }
     // maybe getAll for more elaborate URLs
-   let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
+  // let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
     //? maybe delete the searchParameter and pass this along to the RespondWith bit
     //theURL.searchParams.delete(K_strServiceWorkerCommand);
     // or we can use respondWith to return a value???
@@ -398,7 +398,9 @@ return ;
     //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
     //  got bit by a + in the APP_NAME that turned into a space
     console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inq + '    ' + APPandVER +' ' + NowISO8601()  );
-  let splitInq = splitStringOnce(  inq ,COLON );
+  let splitInq = splitStringOnce( 
+    decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ),
+    COLON );
   let question = splitInq.before;
   let theParameters = splitInq.after;  
 
@@ -430,7 +432,8 @@ return ;
       console.log(promAnswer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
       break;
     case 'CACHE_LIST':
-        promAnswer =  listCachedURLs(CACHE_NAME, question) ;
+        let listOfURLs =  /*await*/ listCachedURLs(CACHE_NAME) ;
+        promAnswer = listOfURLs.toString() ;
       break;
     case 'ALL':
       
@@ -714,7 +717,7 @@ async function cacheLoad(){
  // this fails if any files don't exist await cache.addAll( CACHE_FILES_LIST );
 }
 
-async function listCachedURLs( nameOfCache, question = ''){
+async function listCachedURLs(nameOfCache){
   if( (null === nameOfCache) ||
       (undefined === nameOfCache) ||
       (''=== nameOfCache) ){
@@ -733,9 +736,11 @@ async function listCachedURLs( nameOfCache, question = ''){
       retVal[i] = rq.url;
       i++; 
     } )
+  return ( retVal ) ;
 
-    if(question){ retVal = question + COLON + retVal }
-  return (   retVal ) ;
+  // console.log('List of URLs that are in cache ' + VER +' ' + NowISO8601() );
+  // theRequests.forEach( (rq)=>{ console.log('  ' + rq.url) } )
+  // console.log( NowISO8601(),LF);
 } // end of async function listCachedURLs(nameOfCache)
 
 async function cacheGetDate4() {

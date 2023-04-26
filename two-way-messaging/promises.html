@@ -19,6 +19,24 @@
 
     }
 
+    function fetchWith2Thens(){
+// from https://developer.mozilla.org/en-US/docs/Learn/JavaScript/Asynchronous/Promises
+const fetchPromise = fetch('https://mdn.github.io/learning-area/javascript/apis/fetching-data/can-store/products.json');
+
+ fetchPromise.then(
+    (response) => { 
+      const jsonPromise = response.json();   
+      jsonPromise.then(
+        (data) => {
+          console.log(data[0].name);
+        }
+      );
+    }
+ );
+}
+fetchWith2Thens();
+
+
 function runInParallel(){
   // modified from https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise/allSettled 
   const promise1 = Promise.resolve(3);

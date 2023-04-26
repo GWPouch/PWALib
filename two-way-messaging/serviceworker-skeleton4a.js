@@ -6,11 +6,7 @@
 //   chrome://serviceworker-internals/
 
 
-const COLON =':';
-const SEMICOLON = ';'
-const DOT = '.';  const PERIOD = '.'; const DECIMAL = '.';
-const COMMA = ',';
-const SPACE = ' ';
+
 ////////////////////////////////////////////////////////////////////////////////
   // for debugging use.  LF,  NowISO8601, describeObject
     const LF = "\n";
@@ -355,8 +351,7 @@ function ServiceWorker_fetch_command(eventFetch){
 
 function ServiceWorker_fetch_inquire(eventFetch){
   console.log(' in ServiceWorker_fetch_inquire', eventFetch.request.url)
-  // A long inquire string is good because it's unlikely to collide,
-  //   but is hard to type and can cause other problems with URI-encoding
+  // A long inquire string is good because it's unlikely to collide, but is hard to type and can cause other problems with URI-encoding
   const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+VER+'Qq')   ;
   const K_strServiceWorkerInquire_esc  = encodeURIComponent(K_strServiceWorkerInquire_RAW);
 
@@ -390,7 +385,7 @@ return ;
           //   console.log(key,value);
           // }
     // maybe getAll for more elaborate URLs
-   let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
+  let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
     //? maybe delete the searchParameter and pass this along to the RespondWith bit
     //theURL.searchParams.delete(K_strServiceWorkerCommand);
     // or we can use respondWith to return a value???
@@ -398,22 +393,16 @@ return ;
     //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
     //  got bit by a + in the APP_NAME that turned into a space
     console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inq + '    ' + APPandVER +' ' + NowISO8601()  );
-  let splitInq = splitStringOnce(  inq ,COLON );
-  let question = splitInq.before;
-  let theParameters = splitInq.after;  
-
-  //   let question = inq ;
-  // let theParameters = '' ;
-  // if(inq.includes(':')){
-  //   let ndx = inq.indexOf(':')
-  //   question = inq.substring(0,ndx).trim();
-  //   theParameters = inq.substring(ndx+1);
-  //   console.log(question, theParameters);
-  // }  
-
+  let question = inq ;
+  let theParameters = '' ;
   let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
-  let promAnswer = null;
-
+  let promAnswer =null;
+  if(inq.includes(':')){
+    let ndx = inq.indexOf(':')
+    question = inq.substring(0,ndx).trim();
+    theParameters = inq.substring(ndx+1);
+    console.log(question, theParameters);
+  }  
   switch ( question ) {
     case 'APP_NAME': 
         answer = APP_NAME ;
@@ -426,11 +415,34 @@ return ;
         answer = VER;
       break;
     case 'CACHE_DATE':
-      promAnswer=(  cacheGetDate(question) );
+
+      //answer='Bob';
+
+
+
+      // eventFetch.waitUntil( 
+         
+         
+              //answer = 'Charlie';
+              promAnswer=(  cacheGetDate(question) );
+              // console.log(answer, NowISO8601(), `in async arrow function in waitUntil, after answer = cacheGetDate();`);
+              // answer=answer.resolved
+              // console.log(answer, NowISO8601(), `in async arrow function in waitUntil, after answer=answer.resolved`);
+         
+          // cacheGetDate().then( (txt)=>{ answer=txt;} ) );
+        //  )
       console.log(promAnswer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
+
+// console.log(answer, NowISO8601()),`before eventFetch.waitUntil(   cacheGetDate()  );`;
+//       eventFetch.waitUntil(   cacheGetDate()  );
+// console.log(answer, NowISO8601(), `after eventFetch.waitUntil(   cacheGetDate()  );`);      
+        //fetch(CACHE_TIMESTAMP_NAME).then( (response)=>response.text().then((txt)=>answer=txt)   )
+       // eventFetch.waitUntil(  cacheGetDate()   );
+
       break;
     case 'CACHE_LIST':
-        promAnswer =  listCachedURLs(CACHE_NAME, question) ;
+        let listOfURLs =  /*await*/ listCachedURLs(CACHE_NAME) ;
+        promAnswer = listOfURLs.toString() ;
       break;
     case 'ALL':
       
@@ -439,13 +451,12 @@ return ;
     default:
       break;
   }// end switch on inquire-->subtopic
-
-  if(promAnswer){ // less likely to be set during confused debugging than answer, which is text
-    eventFetch.replies.push(promAnswer);
+  if(answer){
+    eventFetch.replies.push( question + ':'+answer  );
   } else{
-    eventFetch.replies.push( question + COLON + answer  );
+    eventFetch.replies.push(promAnswer);
   }
-  //eventFetch.respondWith(  new Response(answer) );   This might give a few replies, and respondWith can only be called once, so ServiceWorker_fetch_typical   checks the array eventFetch.replies  and uses that to reply
+  //eventFetch.respondWith(  new Response(answer) );
 } // end of ServiceWorker_fetch_inquire
 
 
@@ -494,18 +505,7 @@ function cloneRequestToNewURL(requestOriginal, urlWanted) {
   return(retVal);
 } // end of function cloneRequestToNewURL
   
-function splitStringOnce(StringIn, Delimiter ){
-  StringIn = StringIn.trim();
-  let ndx = StringIn.indexOf( Delimiter );
-  let retVal={before:StringIn, delimiter:Delimiter, after:''}
-  if(ndx === -1 ){
-    //leave retVal alone
-  } else {
-    retVal.before = StringIn.substring(0,ndx).trim();
-    retVal.after  = StringIn.substring(ndx+1).trim();
-  }
-  return ( retVal ) ;
-}
+function splitString(StringIn, Delimiter ){}
 
 
 
@@ -714,7 +714,7 @@ async function cacheLoad(){
  // this fails if any files don't exist await cache.addAll( CACHE_FILES_LIST );
 }
 
-async function listCachedURLs( nameOfCache, question = ''){
+async function listCachedURLs(nameOfCache){
   if( (null === nameOfCache) ||
       (undefined === nameOfCache) ||
       (''=== nameOfCache) ){
@@ -733,9 +733,11 @@ async function listCachedURLs( nameOfCache, question = ''){
       retVal[i] = rq.url;
       i++; 
     } )
+  return ( retVal ) ;
 
-    if(question){ retVal = question + COLON + retVal }
-  return (   retVal ) ;
+  // console.log('List of URLs that are in cache ' + VER +' ' + NowISO8601() );
+  // theRequests.forEach( (rq)=>{ console.log('  ' + rq.url) } )
+  // console.log( NowISO8601(),LF);
 } // end of async function listCachedURLs(nameOfCache)
 
 async function cacheGetDate4() {
