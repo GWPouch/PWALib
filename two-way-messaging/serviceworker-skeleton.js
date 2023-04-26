@@ -5,7 +5,7 @@
 //     edge://serviceworker-internals/   or some such
 //   chrome://serviceworker-internals/
 
-
+const NULL_STRING = '';
 const COLON =':';
 const SEMICOLON = ';'
 const DOT = '.';  const PERIOD = '.'; const DECIMAL = '.';
@@ -48,8 +48,8 @@ const SPACE = ' ';
 
   // Constants and semi-constants.  All of these could be const  , but let allows for setting them in ServiceWorker_initialize()
   let APP_NAME = 'Window+ServiceWorkerCommunicator';
-  let VER='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
-  let APPandVER = APP_NAME + ' '+ VER ;   
+  let APP_VERSION='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
+  let APPandVER = APP_NAME + ' '+ APP_VERSION ;   
   let broadcastChannel = new BroadcastChannel( APP_NAME); 
         broadcastChannel.onmessage=ServiceWorker_message ;
   console.log('serviceworker broadcastChannel is '+ broadcastChannel.name )
@@ -66,7 +66,7 @@ const SPACE = ' ';
 
   let CACHE_TIMESTAMP_NAME = 'cache-time-stamp.txt';
   // these come from https://learn.microsoft.com/en-us/microsoft-edge/progressive-web-apps-chromium/how-to/
-  let CACHE_NAME =  APP_NAME + VER;  //'JoeMamaCache'; //  APP_NAME + VER;
+  let CACHE_NAME =  APP_NAME + APP_VERSION;  //'JoeMamaCache'; //  APP_NAME + VER;
   let CACHE_FILES_LIST = [
     './MajorGeneralSong.html',
     './webpage.html',
@@ -99,9 +99,9 @@ function ServiceWorker_initialize(){
   // set 'global' variables (accessible only to the ServiceWorker and its children)
 
   APP_NAME=  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
-  VER = 'v.031'; // this MUST come before setting up the broadcast channel and 
+  APP_VERSION = 'v.031'; // this MUST come before setting up the broadcast channel and 
                  //     sending out a test message, because we use VER in the adorned message
-  APPandVER = APP_NAME + ' '+ VER ;
+  APPandVER = APP_NAME + ' '+ APP_VERSION ;
   
   broadcastChannel = new BroadcastChannel(APP_NAME);
     broadcastChannel.onmessage=ServiceWorker_message ;
@@ -154,7 +154,7 @@ function ServiceWorker_install(eventInstall){
 
   console.log(
     'In start of ServiceWorker_install  event listener for install  ' +
-         APP_NAME + ' ' + VER +' ' + NowISO8601() 
+         APP_NAME + ' ' + APP_VERSION +' ' + NowISO8601() 
   );
 
   eventInstall.waitUntil( cacheLoad()   );
@@ -162,7 +162,7 @@ function ServiceWorker_install(eventInstall){
 
   console.log(
     'At end of ServiceWorker_install    event listener for install  ' +
-         APP_NAME + ' ' + VER +' ' + NowISO8601() 
+         APP_NAME + ' ' + APP_VERSION +' ' + NowISO8601() 
   );
   console.log();
 
@@ -189,7 +189,7 @@ function ServiceWorker_fetch(eventFetch){
   let reqCopy = eventFetch.request.clone();
 
   let txtMsg ='message for console.log and postMessage and such';
-  txtMsg = 'serviceworker fetch event in ' + APP_NAME + ' ' + VER + ' for ' + eventFetch.request.url + ' at ' + NowISO8601()
+  txtMsg = 'serviceworker fetch event in ' + APP_NAME + ' ' + APP_VERSION + ' for ' + eventFetch.request.url + ' at ' + NowISO8601()
   console.log(txtMsg );
 
   //allow URL commands to work like postMessage({cmd:SomeCommand})
@@ -201,7 +201,7 @@ function ServiceWorker_fetch(eventFetch){
       let cmd = decodeURIComponent( theURL.searchParams.get(K_strServiceWorkerCommand) );
       //? maybe delete the searchParameter and pass this along to the RespondWith bit
       theURL.searchParams.delete(K_strServiceWorkerCommand);
-      console.log('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ VER +' ' + NowISO8601()  );
+      console.log('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ APP_VERSION +' ' + NowISO8601()  );
       processCommands( cmd );
       // at this point, we could exit by returning, 
       // or continue on to respondWith bit.
@@ -235,7 +235,7 @@ function ServiceWorker_fetch(eventFetch){
               return fetchResponse;
             } catch (e) {
               // The network failed
-               console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ VER  + ' FAILED '   + error );
+               console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
             }
         }
     })());
@@ -314,7 +314,7 @@ function ServiceWorker_fetch_typical(eventFetch){
             return fetchResponse;
           } catch (e) {
             // The network failed
-             console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ VER  + ' FAILED '   + error );
+             console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
           } //close try block on getting from network
       }// close if on found cached response
     })//close defining async arrow function
@@ -339,7 +339,7 @@ function ServiceWorker_fetch_command(eventFetch){
     console.log(' in ServiceWorker_fetch_command', eventFetch.request.url)
     let txtURL = eventFetch.request.url.toString() ;// request.url  can be string, or a URL object
     let txtURLLowerCase = txtURL.toLowerCase();
-    const K_strServiceWorkerCommand='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+VER+'Qq'   ;
+    const K_strServiceWorkerCommand='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+APP_VERSION+'Qq'   ;
     if( ( txtURLLowerCase.includes('??help')    )  ||
         ( txtURLLowerCase.includes('???')       )  ||
         ( txtURLLowerCase.includes('??command') )  ||
@@ -357,11 +357,11 @@ function ServiceWorker_fetch_inquire(eventFetch){
   console.log(' in ServiceWorker_fetch_inquire', eventFetch.request.url)
   // A long inquire string is good because it's unlikely to collide,
   //   but is hard to type and can cause other problems with URI-encoding
-  const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+VER+'Qq')   ;
-  const K_strServiceWorkerInquire_esc  = encodeURIComponent(K_strServiceWorkerInquire_RAW);
+  const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+APP_VERSION+'Qq')   ; // this is the form used in searchParams.get
+  const K_strServiceWorkerInquire_esc  = encodeURIComponent(K_strServiceWorkerInquire_RAW);         // it must be in URI-escaped form in actual URL.
 
 
-  let txtURL = eventFetch.request.url.toString() ;// request.url  can be string, or a URL object
+  let txtURL = eventFetch.request.url.toString().trim() ;// request.url  can be string, or a URL object
   let txtURLLowerCase = txtURL.toLowerCase();
 
   if( ( txtURLLowerCase.includes('??help')  )    ||
@@ -377,69 +377,42 @@ function ServiceWorker_fetch_inquire(eventFetch){
     // ))
     // console.log('Inquiries look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand + '=CommandForTheServiceWorker'  )
   }
-  if(  (txtURL.indexOf(K_strServiceWorkerInquire_esc)) === -1   ){
-    
-    // DO NOT CALL respondWith more than once. It REALLY messes with the caching.   eventFetch.respondWith( new Response('second response'))
+  
+  let indexOfINQinTxtURL = txtURL.indexOf(K_strServiceWorkerInquire_esc) ;
+  console.log(txtURL,indexOfINQinTxtURL);
+  if(indexOfINQinTxtURL === -1){
 return ;
   }
+
+  // in debug console in Edge,   fetch('QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST')
+  // resulted in a URL of https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST
+  //  ... two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST 63
+  // note that fetch(SomeText) from https://LongAddress  results in a fetch of https://LongAddressSomeText ,
+  // so the following ?can't? happen and we can't fix forgetting to prepend "?" to our query
+  if(indexOfINQinTxtURL === 0 ){
+    txtURL = '?' + txtURL;
+  }
+
+    
+// DO NOT CALL respondWith more than once. It REALLY messes with the caching.   eventFetch.respondWith( new Response('second response'))
   // the URL looks like 
-  //  somePage.html?QqServiceWorkerInquireQq=cacheDelete   
-  //  somePage.html?QqServiceWorkerInquireQq=cacheAddPage%3Ahttps%3A%2F%2Fherrings.yes--we-have-no-bananas.gov%2Ftwo-way-messaging%2Fwebpage.html
+  //  somePage.html?QqServiceWorkerInquireQq=CACHE_LIST   
+  //  somePage.html?QqServiceWorkerInquireQq=cacheDoYouHavePage%3Ahttps%3A%2F%2Fherrings.yes--we-have-no-bananas.gov%2Ftwo-way-messaging%2Fwebpage.html
   let theURL = new URL( txtURL );
           // for (const [key, value] of theURL.searchParams) {
           //   console.log(key,value);
           // }
     // maybe getAll for more elaborate URLs
-   let inq = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
-    //? maybe delete the searchParameter and pass this along to the RespondWith bit
-    //theURL.searchParams.delete(K_strServiceWorkerCommand);
-    // or we can use respondWith to return a value???
+   let inquiry = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
+
+  // at this point, inquiry has ALL the inquiry (even if looks like "CACHE_CONTAINS : http://example.com/index")
+
 
     //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
     //  got bit by a + in the APP_NAME that turned into a space
     console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inq + '    ' + APPandVER +' ' + NowISO8601()  );
-  let splitInq = splitStringOnce(  inq ,COLON );
-  let question = splitInq.before;
-  let theParameters = splitInq.after;  
-
-  //   let question = inq ;
-  // let theParameters = '' ;
-  // if(inq.includes(':')){
-  //   let ndx = inq.indexOf(':')
-  //   question = inq.substring(0,ndx).trim();
-  //   theParameters = inq.substring(ndx+1);
-  //   console.log(question, theParameters);
-  // }  
-
-  let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
-  let promAnswer = null;
-
-  switch ( question ) {
-    case 'APP_NAME': 
-        answer = APP_NAME ;
-      break;
-    case 'CACHE_NAME':
-        answer = CACHE_NAME;
-      break;
-    case 'VER':
-    case 'VERSION':
-        answer = VER;
-      break;
-    case 'CACHE_DATE':
-      promAnswer=(  cacheGetDate(question) );
-      console.log(promAnswer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
-      break;
-    case 'CACHE_LIST':
-        promAnswer =  listCachedURLs(CACHE_NAME, question) ;
-      break;
-    case 'ALL':
-      
-      break;
+    let promReply = processInquiry( inquiry ) ; 
   
-    default:
-      break;
-  }// end switch on inquire-->subtopic
-
   if(promAnswer){ // less likely to be set during confused debugging than answer, which is text
     eventFetch.replies.push(promAnswer);
   } else{
@@ -507,7 +480,53 @@ function splitStringOnce(StringIn, Delimiter ){
   return ( retVal ) ;
 }
 
+async function processInquiry( strInquiry){
+  // moved much of the code from ServiceWorker_fetch_inquire to here, so we can also process them using messages
 
+  let splitInq = splitStringOnce( strInquiry , COLON );
+  let question = splitInq.before;
+  let theParameters = splitInq.after;  
+//eventFetch.replies is an array of strings or Promises to be handled later in the ServiceWorker_fetch_typical routine.
+ let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
+ let promAnswer = null;
+
+ switch ( question ) {
+   case 'INQUIRIES_LIST':
+       answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,INQUIRIES_LIST'
+     break;
+   case 'APP_NAME': 
+       answer = APP_NAME ;
+     break;
+
+   case 'APP_VERSION':  
+   case 'VER':
+   case 'VERSION':
+       answer = APP_VERSION;
+     break;
+
+   case 'CACHE_NAME':
+       answer = CACHE_NAME;
+     break;
+
+   case 'CACHE_DATE':
+     promAnswer=(  cacheGetDate(question) );
+     console.log(promAnswer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
+     break;
+   case 'CACHE_LIST':
+       promAnswer =  listCachedURLs(CACHE_NAME, question) ;
+     break;
+ 
+   default:
+       answer='Did not recognize inquiry "'+ question  +'"  . Check capitalization and spelling.   INQUIRIES_LIST to see known values.'
+     break;
+ }// end switch on question
+
+  if(promAnswer){
+    return (promAnswer ) 
+  } else {
+    return ( answer )
+  } 
+}
 
 async function processCommands(strCommand){
   let cmd = strCommand;
@@ -518,7 +537,7 @@ async function processCommands(strCommand){
   let parts = strCommand.split(';');
   for(let part of parts){
     i++;
-    let subparts=part.split(':');
+    let subparts=part.split(COLON);
       for(let j=0; j<subparts.length;j++){ subparts[j]=subparts[j].trim() }
     console.log(i, subparts, NowISO8601());
     
@@ -537,7 +556,7 @@ async function processCommands(strCommand){
             break;
           case 'VER':
           case 'VERSION':
-              answer = VER;
+              answer = APP_VERSION;
             break;
           case 'CACHE_DATE':
             
@@ -567,32 +586,32 @@ async function processCommands(strCommand){
   
         break;
       case 'cacheList':
-            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + VER +' ' + NowISO8601() + LF);
+            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + APP_VERSION +' ' + NowISO8601() + LF);
             console.log('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
           let strArrCachedURLs =   await listCachedURLs(CACHE_NAME) ;
             console.log('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
-            console.log('end sw message_cmd cacheList '+ VER +' ' + NowISO8601() + LF);
+            console.log('end sw message_cmd cacheList '+ APP_VERSION +' ' + NowISO8601() + LF);
         break;    
   
       case 'cacheRefresh':
-            console.log('in cacheRefresh '+ VER +' ' + NowISO8601());
+            console.log('in cacheRefresh '+ APP_VERSION +' ' + NowISO8601());
           await caches.delete(CACHE_NAME);
           await cacheLoad();
-            console.log('end of cacheRefresh ' + VER +' ' + NowISO8601()  + LF);
+            console.log('end of cacheRefresh ' + APP_VERSION +' ' + NowISO8601()  + LF);
         break;    
   
         case 'cacheDelete':
-          console.log('In cacheDelete ' + VER +' ' + NowISO8601()  );
+          console.log('In cacheDelete ' + APP_VERSION +' ' + NowISO8601()  );
         await caches.delete(CACHE_NAME);
-          console.log('end of cacheDelete ' + VER +' ' + NowISO8601() + LF  );      
+          console.log('end of cacheDelete ' + APP_VERSION +' ' + NowISO8601() + LF  );      
       break;
   
         
       case 'goAway':
-            console.log('Goodbye, cold, cruel world. ' + VER +' ' + NowISO8601() );
+            console.log('Goodbye, cold, cruel world. ' + APP_VERSION +' ' + NowISO8601() );
           caches.delete(CACHE_NAME);
           await self.registration.unregister();
-            console.log('I\'m me-e-e-l-l-ting '+ VER +' ' + NowISO8601() );
+            console.log('I\'m me-e-e-l-l-ting '+ APP_VERSION +' ' + NowISO8601() );
         break;  
   
       default:
@@ -623,11 +642,11 @@ function ServiceWorker_message(eventMessage){
     return( retVal );
     } // end function writeMessageToString
   
-  console.log(' message event handler in ServiceWorker ' + VER +' ' + NowISO8601() );
+  console.log(' message event handler in ServiceWorker ' + APP_VERSION +' ' + NowISO8601() );
   console.log( writeMessageToString(eventMessage)  , NowISO8601() );
   try {
     let cmd = eventMessage.data.cmd ;  // if object passed to  postMessage does not have data.cmd, this DOES NOT THROW AN ERROR, but assigns undefined to cmd.
-    console.log('cmd = ' + cmd +' ' + VER +' ' + NowISO8601() );
+    console.log('cmd = ' + cmd +' ' + APP_VERSION +' ' + NowISO8601() );
     if(cmd){  //undefined is falsy, so an object missing cmd does not throw an error, but does skip this
       processCommands(cmd) ;
     } else {
@@ -727,12 +746,13 @@ async function listCachedURLs( nameOfCache, question = ''){
       // co1n sole.log( 'cache is now of type ' + cache.constructor.name +'  ' + VER +' ' + NowISO8601() );
   let theRequests = await cache.keys() ;
       // co1n sole.log( 'theKeys is now of type ' + theKeys.constructor.name + ' ' + theKeys.length  + ' '  + VER +' ' + NowISO8601() );
-  let retVal = new Array(theRequests.length);
+  let arrRequests = new Array(theRequests.length);
   let i= 0;
   theRequests.forEach( (rq)=>{
-      retVal[i] = rq.url;
+    arrRequests[i] = rq.url;
       i++; 
     } )
+  let retVal = arrRequests.toString();
 
     if(question){ retVal = question + COLON + retVal }
   return (   retVal ) ;
@@ -827,7 +847,7 @@ async function cacheGetDate5a() {
   // dateOfCache = prom.resolved;
   // console.log('cacheGetDate   dateOfCache = prom.resolved;', '',dateOfCache,NowISO8601())
   // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
-  return( question +':' +  dateOfCache );
+  return( question +COLON +  dateOfCache );
   
 }
 
@@ -836,7 +856,7 @@ async function cacheGetDate5a() {
 
 // All of these postMessage functions accept only the first, plain object, and do not handle target origin, or transferable objects.
 function addSourceAndTimeToMessageObject(objMessage){
-  objMessage.from='ServiceWorker ' + APP_NAME + ' ' + VER   ;
+  objMessage.from='ServiceWorker ' + APP_NAME + ' ' + APP_VERSION   ;
   objMessage.fromURL=self.location.href;
   objMessage.when=NowISO8601();
   
