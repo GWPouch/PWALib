@@ -264,8 +264,11 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 
   <input type="button" value="Fetch Version" 
      onclick="let a=fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=VERSION', elmTextResults,true) ;  console.log(a); " /><br />
-    <input type="button" value="Fetch Date" 
+  <input type="button" value="Fetch Date" 
      onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=CACHE_DATE', elmTextResults,true) ;" /><br />
+  <input type="button" value="Fetch List of Cached Pages" 
+     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=CACHE_LIST', elmTextResults,true) ;" /><br />
+   
   <a href="./PageThatDoesNotExist.html">./PageThatDoesNotExist.html</a><br />
 
 

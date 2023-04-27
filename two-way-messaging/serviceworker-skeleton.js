@@ -11,6 +11,9 @@ const SEMICOLON = ';'
 const DOT = '.';  const PERIOD = '.'; const DECIMAL = '.';
 const COMMA = ',';
 const SPACE = ' ';
+const QUOTE='"'; const QUOTE_DOUBLE='"';
+const APOS="'";  const QUOTE_SINGLE="'";
+
 ////////////////////////////////////////////////////////////////////////////////
   // for debugging use.  LF,  NowISO8601, describeObject
     const LF = "\n";
@@ -97,6 +100,8 @@ const SPACE = ' ';
 
 function ServiceWorker_initialize(){
   // set 'global' variables (accessible only to the ServiceWorker and its children)
+
+//  maybe cache_name and such should be read from an XML file at startup during initialize
 
   APP_NAME=  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
   APP_VERSION = 'v.031'; // this MUST come before setting up the broadcast channel and 
@@ -369,56 +374,39 @@ function ServiceWorker_fetch_inquire(eventFetch){
       ( txtURLLowerCase.includes('??inquiry')  ) ||
       ( txtURLLowerCase.includes('??inquire')  ) ||
       ( txtURLLowerCase.includes('??enquire')  )  
-    )
-   {
-    eventFetch.replies.push('Inquiries to the ServiceWorker look like ?'+ K_strServiceWorkerInquire_esc + '=InquiryForTheServiceWorker , like '+K_strServiceWorkerInquire_esc + '=CACHE_DATE')
-    // eventFetch.respondWith( new Response( 
-    //   'Inquiries to the ServiceWorker look like\n ./PageThatDoesNotExist.html?'+ K_strServiceWorkerInquire + '=InquiryForTheServiceWorker , like '+K_strServiceWorkerInquire + '=CACHE_DATE'  
-    // ))
-    // console.log('Inquiries look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand + '=CommandForTheServiceWorker'  )
+    ) {
+    eventFetch.replies.push('Inquiries to the ServiceWorker look like ?'+ K_strServiceWorkerInquire_esc + '=InquiryForTheServiceWorker , as in ?'+K_strServiceWorkerInquire_esc + '=CACHE_DATE')
   }
   
   let indexOfINQinTxtURL = txtURL.indexOf(K_strServiceWorkerInquire_esc) ;
-  console.log(txtURL,indexOfINQinTxtURL);
   if(indexOfINQinTxtURL === -1){
 return ;
   }
 
-  // in debug console in Edge,   fetch('QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST')
-  // resulted in a URL of https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST
-  //  ... two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST 63
-  // note that fetch(SomeText) from https://LongAddress  results in a fetch of https://LongAddressSomeText ,
-  // so the following ?can't? happen and we can't fix forgetting to prepend "?" to our query
   if(indexOfINQinTxtURL === 0 ){
     txtURL = '?' + txtURL;
+      // in debug console in Edge,   fetch('QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST')
+      // resulted in a URL of https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST
+      //  ... two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST 63
+      // note that fetch(SomeText) from https://LongAddress  results in a fetch of https://LongAddressSomeText ,
+      // so (indexOfINQinTxtURL === 0)  ?can't? happen and we can't fix forgetting to prepend "?" to our query
   }
-
     
 // DO NOT CALL respondWith more than once. It REALLY messes with the caching.   eventFetch.respondWith( new Response('second response'))
   // the URL looks like 
   //  somePage.html?QqServiceWorkerInquireQq=CACHE_LIST   
   //  somePage.html?QqServiceWorkerInquireQq=cacheDoYouHavePage%3Ahttps%3A%2F%2Fherrings.yes--we-have-no-bananas.gov%2Ftwo-way-messaging%2Fwebpage.html
   let theURL = new URL( txtURL );
-          // for (const [key, value] of theURL.searchParams) {
-          //   console.log(key,value);
-          // }
-    // maybe getAll for more elaborate URLs
    let inquiry = decodeURIComponent( theURL.searchParams.get( (K_strServiceWorkerInquire_RAW)) ).trim();
-
   // at this point, inquiry has ALL the inquiry (even if looks like "CACHE_CONTAINS : http://example.com/index")
-
 
     //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
     //  got bit by a + in the APP_NAME that turned into a space
-    console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inq + '    ' + APPandVER +' ' + NowISO8601()  );
+
+    console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inquiry + '    ' + APPandVER +' ' + NowISO8601()  );
+
     let promReply = processInquiry( inquiry ) ; 
-  
-  if(promAnswer){ // less likely to be set during confused debugging than answer, which is text
-    eventFetch.replies.push(promAnswer);
-  } else{
-    eventFetch.replies.push( question + COLON + answer  );
-  }
-  //eventFetch.respondWith(  new Response(answer) );   This might give a few replies, and respondWith can only be called once, so ServiceWorker_fetch_typical   checks the array eventFetch.replies  and uses that to reply
+    eventFetch.replies.push(promReply);
 } // end of ServiceWorker_fetch_inquire
 
 
@@ -489,8 +477,9 @@ async function processInquiry( strInquiry){
 //eventFetch.replies is an array of strings or Promises to be handled later in the ServiceWorker_fetch_typical routine.
  let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
  let promAnswer = null;
-
+  let nameOfCache=CACHE_NAME;
  switch ( question ) {
+  // add any new case s   to the INQUIRIES_LIST
    case 'INQUIRIES_LIST':
        answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,INQUIRIES_LIST'
      break;
@@ -505,15 +494,24 @@ async function processInquiry( strInquiry){
      break;
 
    case 'CACHE_NAME':
-       answer = CACHE_NAME;
+       answer = CACHE_NAME; // works if we have only the one cache
+
+       // this retrieves all the caches, with each surrounded by <<double < > inequality signs>>
+       //    since there seem to be very lax rules on what a cache name can look like. 
+       let theCacheList=await self.caches.keys();
+       answer=''
+       theCacheList.forEach((cacheName)=>{ 
+          answer = answer + '<<'+ cacheName +'>>' + SPACE;
+        } )
+        answer = answer.trim();
+
      break;
 
    case 'CACHE_DATE':
-     promAnswer=(  cacheGetDate(question) );
-     console.log(promAnswer, NowISO8601(), `after eventFetch.waitUntil( answer = cacheGetDate)`)
+      promAnswer=(  cacheGetDate(theParameters, question) ); // nameOfCache defaults to CACHE_NAME
      break;
    case 'CACHE_LIST':
-       promAnswer =  listCachedURLs(CACHE_NAME, question) ;
+       promAnswer =  listCachedURLs(theParameters, question) ;
      break;
  
    default:
@@ -524,7 +522,7 @@ async function processInquiry( strInquiry){
   if(promAnswer){
     return (promAnswer ) 
   } else {
-    return ( answer )
+    return ( question + COLON +  answer )
   } 
 }
 
@@ -689,6 +687,7 @@ async function cacheLoad(){
       // Uncaught (in promise) DOMException: Failed to execute 'open' on 'CacheStorage': Unexpected internal error. 
       //  see comment on https://stackoverflow.com/questions/64297126/service-worker-fails-on-caches-open
     const cache = await   self.caches.open(CACHE_NAME);
+    
       // console.log('   just opened cache. It is of type ' , cache.constructor.name)
     
     let nF=0;
@@ -746,13 +745,24 @@ async function listCachedURLs( nameOfCache, question = ''){
       // co1n sole.log( 'cache is now of type ' + cache.constructor.name +'  ' + VER +' ' + NowISO8601() );
   let theRequests = await cache.keys() ;
       // co1n sole.log( 'theKeys is now of type ' + theKeys.constructor.name + ' ' + theKeys.length  + ' '  + VER +' ' + NowISO8601() );
-  let arrRequests = new Array(theRequests.length);
-  let i= 0;
+  let retVal = '';  //RFC 1738 says we can ' ' as a delimiter since they're not allowed IN URLs
   theRequests.forEach( (rq)=>{
-    arrRequests[i] = rq.url;
-      i++; 
-    } )
-  let retVal = arrRequests.toString();
+    retVal = retVal + rq.url + SPACE;
+  } );
+  retVal = retVal.trim()
+  // let kountFiles = theRequests.length;
+  // if(kountFiles){
+  //   let arrRequests = new Array(kountFiles);
+  //   let i= 0;
+  //   theRequests.forEach( (rq)=>{
+  //     arrRequests[i] = rq.url;
+  //       i++; 
+  //     } )
+  // } else {
+    //handle the no files case
+  // }
+  // let retVal = arrRequests.toString();//sadly, this has a ,  as separator, and that can show up in URLs
+
 
     if(question){ retVal = question + COLON + retVal }
   return (   retVal ) ;
@@ -829,16 +839,16 @@ async function cacheGetDate5a() {
   return( dateOfCache );
   
 }
-
- async function cacheGetDate(question) {
+async function cacheGetDate6(question) {
+  // this version actually works
   let dateOfCache='Alice';
   console.log('cacheGetDate started', '',dateOfCache,NowISO8601())
-
-  // async function getIt(){
-      let cache = await self.caches.open(CACHE_NAME);
-      console.log('getIt started   let cache = await self.caches.open(CACHE_NAME)',cache,NowISO8601())
-      let response = await cache.match(CACHE_TIMESTAMP_NAME);
-      console.log('getIt           let response = await cache.match(CACHE_TIMESTAMP_NAME);',response,NowISO8601())
+    // the cache=  response=   schtick  works, but  let response = fetch(CACHE_TIMESTAMP_NAME) fails, somehow
+  let cache = await self.caches.open(CACHE_NAME);
+  console.log('getIt started   let cache = await self.caches.open(CACHE_NAME)',cache,NowISO8601())
+  let response = await cache.match(CACHE_TIMESTAMP_NAME);
+  console.log('getIt           let response = await cache.match(CACHE_TIMESTAMP_NAME);',response,NowISO8601())
+    // let response = fetch( './' + CACHE_TIMESTAMP_NAME)          
       dateOfCache = await response.text();
       console.log('getIt           finished', 'date returned',dateOfCache,NowISO8601())
   // };
@@ -850,6 +860,25 @@ async function cacheGetDate5a() {
   return( question +COLON +  dateOfCache );
   
 }
+
+ async function cacheGetDate(nameOfCache, question = ''){
+  if( (null === nameOfCache) ||
+      (undefined === nameOfCache) ||
+      (''=== nameOfCache) ){
+      nameOfCache = CACHE_NAME
+  }
+
+  let retVal = 'Alice';
+    // the cache=  response=   schtick  works, but  let response = fetch(CACHE_TIMESTAMP_NAME) fails, somehow
+  let cache = await self.caches.open(nameOfCache);
+  let response = await cache.match(CACHE_TIMESTAMP_NAME);
+        // let response = fetch( CACHE_TIMESTAMP_NAME )  // within the ServiceWorker, fetch always immediately tries the network. 
+        // Otherwise, you couldn't really access the network.  
+        // In JavaScript in a webpage, fetch raises FetchEvent in the ServiceWorker         
+  retVal = await response.text();
+  if(question){ question + COLON +  retVal}
+  return( retVal ); 
+} // end of async function cacheGetDate(question)
 
 
 
