@@ -225,15 +225,15 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 
 <body onload="startServiceWorkerAndMessaging();"    >
   <!--
-    onunload="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"
+    onunload="theServiceWorker.postMessage({ cmd:'GoAway' , value:'now'  });  //theServiceWorkerRegistration.unregister()"
 
   -->
   <h1>Two-way messaging with a ServiceWorker</h1>
    <p><a href="?QqServiceWorkerCommandQq=cacheList" >Access information using URL</a></p> 
 
-  <input type="button" value="Inquire VER" 
+  <input type="button" value="MSG Inquire VER" 
     onclick="theServiceWorker.postMessage({
-      cmd:'inquire:VER ; inquire:APP_NAME ; inquire: CACHE_LIST ;    spaces:    ',
+      inquire:'APP_VERSION ',
       from:document.location.href +' button_click', 
       when:NowISO8601()
      }); " /> <br />
@@ -281,7 +281,7 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
     style="resize:none; overflow-y: scroll; overflow-x: scroll;"
     title="Results displayed here"   ></textarea>  
   <br/>
-  <input type="button" value="Kill ServiceWorker and Cache" onclick="theServiceWorker.postMessage({ cmd:'goAway' , value:'now'  });" />
+  <input type="button" value="Kill ServiceWorker and Cache" onclick="theServiceWorker.postMessage({ cmd:'GoAway' , value:'now'  });" />
 
 </body>
 </html>

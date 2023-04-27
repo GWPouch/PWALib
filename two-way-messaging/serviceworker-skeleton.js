@@ -53,17 +53,12 @@ const APOS="'";  const QUOTE_SINGLE="'";
   let APP_NAME = 'Window+ServiceWorkerCommunicator';
   let APP_VERSION='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
   let APPandVER = APP_NAME + ' '+ APP_VERSION ;   
-  let broadcastChannel = new BroadcastChannel( APP_NAME); 
-        broadcastChannel.onmessage=ServiceWorker_message ;
-  console.log('serviceworker broadcastChannel is '+ broadcastChannel.name )
-
-  // let postMessage_BroadcastChannel = broadcastChannel.postMessage.bind(broadcastChannel);
-      postMessage_BroadcastChannel({from:'ServiceWorker '+self.location.href ,
-                     how: 'broadcastChancel for ' + broadcastChannel.name,
-                     when:NowISO8601() 
-      })
-
-        broadcastChannel.close();
+  let APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+self.location.href 
+  let broadcastChannel = null ; // new BroadcastChannel( APP_NAME); 
+  // broadcast Channel.onmessage=ServiceWorker_message ;
+  // console.log('serviceworker broadcast Channel is '+ broad castChannel.name )
+  //     postMessage_Broad cast Channel({ping:'PING', how: 'broad castChancel for ' + broad castChannel.name  })
+  //       broadcast Channel.close();
   
 
 
@@ -107,12 +102,14 @@ function ServiceWorker_initialize(){
   APP_VERSION = 'v.031'; // this MUST come before setting up the broadcast channel and 
                  //     sending out a test message, because we use VER in the adorned message
   APPandVER = APP_NAME + ' '+ APP_VERSION ;
-  
-  broadcastChannel = new BroadcastChannel(APP_NAME);
-    broadcastChannel.onmessage=ServiceWorker_message ;
-    console.log('sw broadcastChannel is '+ broadcastChannel.name )
-  //postMessage_BroadcastChannel = broadcastChannel.postMessage.bind(broadcastChannel);
-  postMessage_BroadcastChannel({what:'serviceWorker just started the broadcastChannel ' + APP_NAME })
+  APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+ self.location.href +' ' ;
+
+  BroadCastChannel_START(APP_NAME); // or APPandVER
+  // broadcast Channel = new Broadcast Channel(APP_NAME); // or APPandVER
+  //   broadcast Channel.onmessage=ServiceWorker_message ;
+  //   console.log('sw broadcast Channel is '+ broadcastChannel.name )
+  // //postMessage_Broadcast Channel = broadcast Channel.postMessage.bind(broadcast Channel);
+  // postMessage_Broadcast Channel({what:'serviceWorker just started the broadcast Channel ' + APP_NAME })
   
 
   //attach eventListeners    I find named functions much easier to debug than arrow functions with odd indentation.
@@ -121,18 +118,19 @@ function ServiceWorker_initialize(){
   self.addEventListener( 'install',     ServiceWorker_install) ;
   self.addEventListener( 'activate',    ServiceWorker_activate);
 
+  // these happen for every fetch() call in the HTML, but not within the ServiceWorker
   self.addEventListener( 'fetch',       ServiceWorker_fetch_begin);
   self.addEventListener( 'fetch',       ServiceWorker_fetch_inquire);
   self.addEventListener( 'fetch',       ServiceWorker_fetch_command);
   self.addEventListener( 'fetch',       ServiceWorker_fetch_typical);
 //self.addEventListener( 'fetch',       ServiceWorker_fetch_finish);
 
-  //  self.addEventListener( 'fetch',       ServiceWorker_fetch);
+  //  self.addEventListener( 'fetch',       ServiceWorker_fetch_zzOLD);
   
-  self.addEventListener( 'message',     ServiceWorker_message);
+  self.addEventListener( 'message',     ServiceWorker_message); // this attaches both ServiceWorker onmessage and broadcastChannel onmessage to the same routine
   self.addEventListener( 'messageerror',ServiceWorker_messageError);
 
-  self.addEventListener( 'statechange' ,ServiceWorker_stateChange)
+  self.addEventListener( 'statechange' ,ServiceWorker_stateChange) ; // this seems to never fire
 
 }
 ServiceWorker_initialize();
@@ -167,9 +165,9 @@ function ServiceWorker_install(eventInstall){
 
   console.log(
     'At end of ServiceWorker_install    event listener for install  ' +
-         APP_NAME + ' ' + APP_VERSION +' ' + NowISO8601() 
+         APPandVERandHREF + NowISO8601() 
   );
-  console.log();
+  console.log(LF);
 
 } // end of ServiceWorker_install
       
@@ -181,13 +179,13 @@ function ServiceWorker_activate(eventActivate){
   // clean up old caches, maybe transferring their contents to new caches
   console.log( 'ServiceWorker_activate start', self.state,  NowISO8601());
       console.log('about to send message using postMessage_ALLClients')
-      postMessage_ALLClients({what: 'ServiceWorker_activate'})
+      postMessageALL({what: 'ServiceWorker_activate', who:APPandVERandHREF})
       eventActivate.waitUntil( self.clients.claim() )  ; // https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
       
   console.log( 'ServiceWorker_activate end', NowISO8601());
 }
 
-function ServiceWorker_fetch(eventFetch){
+function ServiceWorker_fetch_zzOLD(eventFetch){
   // The Fetch  event is the main point of a service worker, and 
   //   happens a lot. Every time the page tries to load something from the dominion claimed in serviceWorker.register()
   // you can watch and edit URLs, return synthetic responses like building a graph in a PNG or altering HTML or CSS...
@@ -245,10 +243,10 @@ function ServiceWorker_fetch(eventFetch){
         }
     })());
 
-    console.log('ServiceWorker_fetch event end  '+NowISO8601() );
+    console.log('ServiceWorker_fetch_zzOLD event end  '+NowISO8601() );
 
 
-} // end of ServiceWorker_fetch
+} // end of ServiceWorker_fetch_zzOLD
 
 
 
@@ -341,25 +339,53 @@ function ServiceWorker_fetch_begin(eventFetch){
 
 function ServiceWorker_fetch_command(eventFetch){
     
-    console.log(' in ServiceWorker_fetch_command', eventFetch.request.url)
+    console.log('Starting ServiceWorker_fetch_command', eventFetch.request.url, NowISO8601())
+    const K_strServiceWorkerCommand_RAW='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+APP_VERSION+'Qq'   ;// this is the form used in searchParams.get
+    const K_strServiceWorkerCommand_esc  = encodeURIComponent(K_strServiceWorkerCommand_RAW);        // it must be in URI-escaped form in actual URL.
+  
     let txtURL = eventFetch.request.url.toString() ;// request.url  can be string, or a URL object
     let txtURLLowerCase = txtURL.toLowerCase();
-    const K_strServiceWorkerCommand='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+APP_VERSION+'Qq'   ;
+
     if( ( txtURLLowerCase.includes('??help')    )  ||
         ( txtURLLowerCase.includes('???')       )  ||
         ( txtURLLowerCase.includes('??command') )  ||
         ( txtURLLowerCase.includes('??cmd')     )   
       )
      {
-      eventFetch.replies.push('Commands to the ServiceWorker look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand + '=CommandForTheServiceWorker , like '+K_strServiceWorkerCommand + '=goAway')
+      eventFetch.replies.push('Commands to the ServiceWorker look like ./PageThatDoesNotExist.html?'+ K_strServiceWorkerCommand_esc + '=CommandForTheServiceWorker , as in ?'+K_strServiceWorkerCommand_esc + '=CommandsList')
      } 
 
-
-}
-
+     let indexOfCMDinTxtURL = txtURL.indexOf(K_strServiceWorkerCommand_esc) ;
+     if(indexOfCMDinTxtURL === -1){
+   return ;
+     }
+   
+     if(indexOfCMDinTxtURL === 0 ){
+       txtURL = '?' + txtURL;
+         // in debug console in Edge,   fetch('QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST')
+         // resulted in a URL of https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST
+         //  ... two-way-messaging/QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=INQUIRIES_LIST 63
+         // note that fetch(SomeText) from https://LongAddress  results in a fetch of https://LongAddressSomeText ,
+         // so (indexOfINQinTxtURL === 0)  ?can't? happen and we can't fix forgetting to prepend "?" to our query
+     }
+       
+   // DO NOT CALL respondWith more than once. It REALLY messes with the caching.   eventFetch.respondWith( new Response('second response'))
+     // the URL looks like 
+     //  somePage.html?QqServiceWorkerCommandQq=CacheDelete   
+     //  somePage.html?QqServiceWorkerInquireQq=CacheAddPage%3Ahttps%3A%2F%2Fherrings.yes--we-have-no-bananas.gov%2Ftwo-way-messaging%2Fwebpage.html
+      let objURL = new URL( txtURL );
+      let command = decodeURIComponent( objURL.searchParams.get( (K_strServiceWorkerCommand_RAW)) ).trim();
+     // at this point, inquiry has ALL the inquiry (even if looks like "CACHE_CONTAINS : http://example.com/index")
+       console.log('Command  URL contained command parameter '+ K_strServiceWorkerCommand_esc  +': ' + command + '    ' + APPandVER +' ' + NowISO8601()  );
+   
+       let promReply = processCommands( command ) ; //annoyingly, 
+       // processCommands _really_ returns a string, but because it's an async function, we have to treat the return value as a promise. 
+       eventFetch.replies.push(promReply);
+   } // end of ServiceWorker_fetch_command
+   
 
 function ServiceWorker_fetch_inquire(eventFetch){
-  console.log(' in ServiceWorker_fetch_inquire', eventFetch.request.url)
+  console.log('Starting  ServiceWorker_fetch_inquire', eventFetch.request.url, NowISO8601())
   // A long inquire string is good because it's unlikely to collide,
   //   but is hard to type and can cause other problems with URI-encoding
   const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+APP_VERSION+'Qq')   ; // this is the form used in searchParams.get
@@ -410,247 +436,49 @@ return ;
 } // end of ServiceWorker_fetch_inquire
 
 
-function cloneRequestToNewURL(requestOriginal, urlWanted) {
-  // modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
-  // requestIN    MUST be a Request object
-  
-
-  let { // alphabetized list of Request properties from MDN 2023-04-23
-    body,
-    //bodyUsed, // seems like an internal property set based on body
-    cache,
-    credentials,
-    destination,
-    headers,
-    //integrity, // this is likely a cryptographic hash set internally.
-    method,  // get post header ...
-    mode,
-    redirect,
-    referrer,
-    referrerPolicy,
-    signal,
-    url
-  } = requestOriginal;
-  
-  mode = 'same-origin'; // we could use  cors, no-cors, same-origin,  or websocket but NOT navigate
-  let retVal = new Request(
-    urlWanted, 
-      { // list of Request properties from MDN
-        body,
-        //bodyUsed, //seems like an internal property
-        cache,
-        credentials,
-        destination,
-        headers,
-        //integrity, //seems like an internal property
-        method,
-        mode,
-        redirect,
-        referrer,
-        referrerPolicy,
-        signal //,
-              // url /
-      }// end of defining new Request options object         
-     ) // closing parenthesis of new Request ( ) 
-  return(retVal);
-} // end of function cloneRequestToNewURL
-  
-function splitStringOnce(StringIn, Delimiter ){
-  StringIn = StringIn.trim();
-  let ndx = StringIn.indexOf( Delimiter );
-  let retVal={before:StringIn, delimiter:Delimiter, after:''}
-  if(ndx === -1 ){
-    //leave retVal alone
-  } else {
-    retVal.before = StringIn.substring(0,ndx).trim();
-    retVal.after  = StringIn.substring(ndx+1).trim();
-  }
-  return ( retVal ) ;
-}
-
-async function processInquiry( strInquiry){
-  // moved much of the code from ServiceWorker_fetch_inquire to here, so we can also process them using messages
-
-  let splitInq = splitStringOnce( strInquiry , COLON );
-  let question = splitInq.before;
-  let theParameters = splitInq.after;  
-//eventFetch.replies is an array of strings or Promises to be handled later in the ServiceWorker_fetch_typical routine.
- let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
- let promAnswer = null;
-  let nameOfCache=CACHE_NAME;
- switch ( question ) {
-  // add any new case s   to the INQUIRIES_LIST
-   case 'INQUIRIES_LIST':
-       answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,INQUIRIES_LIST'
-     break;
-   case 'APP_NAME': 
-       answer = APP_NAME ;
-     break;
-
-   case 'APP_VERSION':  
-   case 'VER':
-   case 'VERSION':
-       answer = APP_VERSION;
-     break;
-
-   case 'CACHE_NAME':
-       answer = CACHE_NAME; // works if we have only the one cache
-
-       // this retrieves all the caches, with each surrounded by <<double < > inequality signs>>
-       //    since there seem to be very lax rules on what a cache name can look like. 
-       let theCacheList=await self.caches.keys();
-       answer=''
-       theCacheList.forEach((cacheName)=>{ 
-          answer = answer + '<<'+ cacheName +'>>' + SPACE;
-        } )
-        answer = answer.trim();
-
-     break;
-
-   case 'CACHE_DATE':
-      promAnswer=(  cacheGetDate(theParameters, question) ); // nameOfCache defaults to CACHE_NAME
-     break;
-   case 'CACHE_LIST':
-       promAnswer =  listCachedURLs(theParameters, question) ;
-     break;
- 
-   default:
-       answer='Did not recognize inquiry "'+ question  +'"  . Check capitalization and spelling.   INQUIRIES_LIST to see known values.'
-     break;
- }// end switch on question
-
-  if(promAnswer){
-    return (promAnswer ) 
-  } else {
-    return ( question + COLON +  answer )
-  } 
-}
-
-async function processCommands(strCommand){
-  let cmd = strCommand;
-    // Originally, I set this up to hand various {cmd:actionWanted } commands like .postMessage({cmd:'cacheClear'})
-    // but I'm now expanding this to include inquire: ....   that will result in a postMessage back to windows.
-    //  so strCommand might look like cacheRefresh , cacheDelete    or  like inquire:VER;    or like inquire:VER; inquire:APP_NAME  
-  let i = 0;
-  let parts = strCommand.split(';');
-  for(let part of parts){
-    i++;
-    let subparts=part.split(COLON);
-      for(let j=0; j<subparts.length;j++){ subparts[j]=subparts[j].trim() }
-    console.log(i, subparts, NowISO8601());
-    
-    cmd       = subparts[0];
-    
-    switch ( cmd  ) {
-      case 'inquire':
-        let question = subparts[1];
-        let answer   = 'some string answer'
-        switch ( question ) {
-          case 'APP_NAME': 
-              answer = APP_NAME;
-            break;
-          case 'CACHE_NAME':
-              answer = CACHE_NAME;
-            break;
-          case 'VER':
-          case 'VERSION':
-              answer = APP_VERSION;
-            break;
-          case 'CACHE_DATE':
-            
-              // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
-              //answer = 
-            break;
-          case 'CACHE_LIST':
-              let listOfURLs =  await listCachedURLs(CACHE_NAME) ;
-              let strTmp = listOfURLs.toString() ;
-              answer = 'The cached URLs in ' + CACHE_NAME + ' are \n' + 
-               strTmp.split(',').join(LF) + NowISO8601() + LF ;
-            break;
-          case 'ALL':
-            
-            break;
-        
-          default:
-            break;
-        }// end switch on inquire-->subtopic
-        console.log(question,answer);
-        //broadcastChannel.postMessage({about:'reply to inquire', topic: question, value: answer })
-        postMessage_BroadcastChannel( {about:'reply to inquire', topic: question, value: answer } )
-
-      break;
-
-      case 'cacheTimeStamp':
-  
-        break;
-      case 'cacheList':
-            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + APP_VERSION +' ' + NowISO8601() + LF);
-            console.log('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
-          let strArrCachedURLs =   await listCachedURLs(CACHE_NAME) ;
-            console.log('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
-            console.log('end sw message_cmd cacheList '+ APP_VERSION +' ' + NowISO8601() + LF);
-        break;    
-  
-      case 'cacheRefresh':
-            console.log('in cacheRefresh '+ APP_VERSION +' ' + NowISO8601());
-          await caches.delete(CACHE_NAME);
-          await cacheLoad();
-            console.log('end of cacheRefresh ' + APP_VERSION +' ' + NowISO8601()  + LF);
-        break;    
-  
-        case 'cacheDelete':
-          console.log('In cacheDelete ' + APP_VERSION +' ' + NowISO8601()  );
-        await caches.delete(CACHE_NAME);
-          console.log('end of cacheDelete ' + APP_VERSION +' ' + NowISO8601() + LF  );      
-      break;
-  
-        
-      case 'goAway':
-            console.log('Goodbye, cold, cruel world. ' + APP_VERSION +' ' + NowISO8601() );
-          caches.delete(CACHE_NAME);
-          await self.registration.unregister();
-            console.log('I\'m me-e-e-l-l-ting '+ APP_VERSION +' ' + NowISO8601() );
-        break;  
-  
-      default:
-        break;
-    }  
-
-  }
-
-}
 
 function ServiceWorker_message(eventMessage){
-    // this is the only place I call it, so I could make it an internal function, or even move it out of a function
-    function writeMessageToString(eventMessage){
-      // copied from worker01/worker01.js
-      let retVal = ('MessageEvent processed at ' + ' ' + NowISO8601() +'\n' ) ;
-      try {
-        retVal = retVal + '  type: ' + eventMessage.constructor.name +'\n';
-        retVal = retVal + '  lastEventId: _' + eventMessage.lastEventId +'_' +'\n';
-        retVal = retVal + '  source: _' + eventMessage.source +'_\n';
-        retVal = retVal + '  origin: _' + eventMessage.origin + '_'+'\n';
-        retVal = retVal + '  data ' +  JSON.stringify( eventMessage.data ) +'\n';      
-      } catch (error) {
-        //ignore errors here
-        let errorMsg = 'Error catch-ed in writeMessageToString() in serviceworker ' + error + ' ' + NowISO8601();
-        console.log( errorMsg);
-        retVal = retVal + errorMsg
-      }
-    return( retVal );
-    } // end function writeMessageToString
   
   console.log(' message event handler in ServiceWorker ' + APP_VERSION +' ' + NowISO8601() );
-  console.log( writeMessageToString(eventMessage)  , NowISO8601() );
+  //if(LogLevel>=1)  console.log( writeMessageToString(eventMessage)  , NowISO8601() );
   try {
-    let cmd = eventMessage.data.cmd ;  // if object passed to  postMessage does not have data.cmd, this DOES NOT THROW AN ERROR, but assigns undefined to cmd.
-    console.log('cmd = ' + cmd +' ' + APP_VERSION +' ' + NowISO8601() );
-    if(cmd){  //undefined is falsy, so an object missing cmd does not throw an error, but does skip this
-      processCommands(cmd) ;
-    } else {
-     // findClientFromEvent(event).postMessage({txt: 'ServiceWorker got message missing a cmd property' })
-      // broadcastToAllClients( {txt: 'ServiceWorker got message missing a cmd property'} );
+    let theData =eventMessage.data;
+    
+    let inq = theData.inquiry || theData.Inquiry || theData.INQUIRY ||
+              theData.inquire || theData.Inquire || theData.INQUIRE ;
+    if(inq){
+      let inqString = inq.toString();
+      let reply = processInquiry( inqString );
+      reply.then( (ans)=>{
+        console.log(APPandVERandHREF +' handled inquiry in message ', inqString, ans, NowISO8601() );
+        postMessageALL({theQuestion: inqString, theAnswer: ans});
+return;
+      })   
     }
+
+    
+    let cmd = theData.cmd || theData.command || theData.Command || theData.COMMAND;
+    if(cmd){
+      let cmdString = cmd.toString();
+      let reply = processCommands( cmdString );
+      reply.then( (ans)=>{
+        console.log(APPandVERandHREF +' handled command in message ', cmdString, ans, NowISO8601() );
+        postMessageALL({theQuestion: cmdString, theAnswer: ans});
+return;
+      })   
+
+    }
+
+
+
+    // let cmd = eventMessage.data.cmd ;  // if object passed to  postMessage does not have data.cmd, this DOES NOT THROW AN ERROR, but assigns undefined to cmd.
+    // console.log('cmd = ' + cmd +' ' + APP_VERSION +' ' + NowISO8601() );
+    // if(cmd){  //undefined is falsy, so an object missing cmd does not throw an error, but does skip this
+    //   processCommands(cmd) ;
+    // } else {
+    //  // findClientFromEvent(event).postMessage({txt: 'ServiceWorker got message missing a cmd property' })
+    //   // broadcastToAllClients( {txt: 'ServiceWorker got message missing a cmd property'} );
+    // }
       
   } catch (error) {
     // ignore errors here
@@ -672,6 +500,24 @@ function ServiceWorker_stateChange(eventStateChange){
 
 }
 
+// this could be an internal function of a single eventMessage handler
+function writeMessageToString(eventMessage){
+  // copied from worker01/worker01.js
+  let retVal = ('MessageEvent processed at ' + ' ' + NowISO8601() +'\n' ) ;
+  try {
+    retVal = retVal + '  type: ' + eventMessage.constructor.name +'\n';
+    retVal = retVal + '  lastEventId: _' + eventMessage.lastEventId +'_' +'\n';
+    retVal = retVal + '  source: _' + eventMessage.source +'_\n';
+    retVal = retVal + '  origin: _' + eventMessage.origin + '_'+'\n';
+    retVal = retVal + '  data ' +  JSON.stringify( eventMessage.data ) +'\n';      
+  } catch (error) {
+    //ignore errors here
+    let errorMsg = 'Error catch-ed in writeMessageToString() in serviceworker ' + error + ' ' + NowISO8601();
+    console.log( errorMsg);
+    retVal = retVal + errorMsg
+  }
+return( retVal );
+} // end function writeMessageToString
 
 
 async function cacheLoad(){
@@ -881,6 +727,325 @@ async function cacheGetDate6(question) {
 } // end of async function cacheGetDate(question)
 
 
+function cloneRequestToNewURL(requestOriginal, urlWanted) {
+  // modified from https://stackoverflow.com/questions/43004657/modify-the-url-of-a-new-request-object-in-es6
+  // requestIN    MUST be a Request object
+  
+
+  let { // alphabetized list of Request properties from MDN 2023-04-23
+    body,
+    //bodyUsed, // seems like an internal property set based on body
+    cache,
+    credentials,
+    destination,
+    headers,
+    //integrity, // this is likely a cryptographic hash set internally.
+    method,  // get post header ...
+    mode,
+    redirect,
+    referrer,
+    referrerPolicy,
+    signal,
+    url
+  } = requestOriginal;
+  
+  mode = 'same-origin'; // we could use  cors, no-cors, same-origin,  or websocket but NOT navigate
+  let retVal = new Request(
+    urlWanted, 
+      { // list of Request properties from MDN
+        body,
+        //bodyUsed, //seems like an internal property
+        cache,
+        credentials,
+        destination,
+        headers,
+        //integrity, //seems like an internal property
+        method,
+        mode,
+        redirect,
+        referrer,
+        referrerPolicy,
+        signal //,
+              // url /
+      }// end of defining new Request options object         
+     ) // closing parenthesis of new Request ( ) 
+  return(retVal);
+} // end of function cloneRequestToNewURL
+  
+function splitStringOnce(StringIn, Delimiter ){
+  StringIn = StringIn.trim();
+  let ndx = StringIn.indexOf( Delimiter );
+  let retVal={before:StringIn, delimiter:Delimiter, after:''}
+  if(ndx === -1 ){
+    //leave retVal alone
+  } else {
+    retVal.before = StringIn.substring(0,ndx).trim();
+    retVal.after  = StringIn.substring(ndx+1).trim();
+  }
+  return ( retVal ) ;
+}
+
+async function processInquiry( strInquiry){
+  // moved much of the code from ServiceWorker_fetch_inquire to here, so we can also process them using messages
+
+  let splitInq = splitStringOnce( strInquiry , COLON );
+  let question = splitInq.before;
+  let theParameters = splitInq.after;  
+//eventFetch.replies is an array of strings or Promises to be handled later in the ServiceWorker_fetch_typical routine.
+ let answer = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
+ let promAnswer = null;
+   
+ switch ( question ) {
+  // add any new case s   to the INQUIRIES_LIST
+   case 'INQUIRIES_LIST':
+       answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,INQUIRIES_LIST'
+     break;
+   case 'APP_NAME': 
+       answer = APP_NAME ;
+     break;
+
+   case 'APP_VERSION':  
+   case 'VER':
+   case 'VERSION':
+       answer = APP_VERSION;
+     break;
+
+   case 'CACHE_NAME':
+       answer = CACHE_NAME; // works if we have only the one cache
+
+       // this retrieves all the caches, with each surrounded by <<double < > inequality signs>>
+       //    since there seem to be very lax rules on what a cache name can look like. 
+       let theCacheList=await self.caches.keys();
+       answer=''
+       theCacheList.forEach((cacheName)=>{ 
+          answer = answer + '<<'+ cacheName +'>>' + SPACE;
+        } )
+        answer = answer.trim();
+
+     break;
+
+   case 'CACHE_DATE':
+      promAnswer=(  cacheGetDate(theParameters, question) ); // nameOfCache defaults to CACHE_NAME
+     break;
+   case 'CACHE_LIST':
+       promAnswer =  listCachedURLs(theParameters, question) ;
+     break;
+ 
+   default:
+       answer='Did not recognize inquiry "'+ question  +'"  . Check capitalization and spelling.   INQUIRIES_LIST to see known values.'
+     break;
+ }// end switch on question
+
+  if(promAnswer){
+    return (promAnswer ) 
+  } else {
+    return ( question + COLON +  answer )
+  } 
+}
+
+
+async function processCommands1(strCommand){
+  let cmd = strCommand;
+    // Originally, I set this up to hand various {cmd:actionWanted } commands like .postMessage({cmd:'cacheClear'})
+    // but I'm now expanding this to include inquire: ....   that will result in a postMessage back to windows.
+    //  so strCommand might look like cacheRefresh , cacheDelete    or  like inquire:VER;    or like inquire:VER; inquire:APP_NAME  
+  let i = 0;
+  let parts = strCommand.split(';');
+  for(let part of parts){
+    i++;
+    let subparts=part.split(COLON);
+      for(let j=0; j<subparts.length;j++){ subparts[j]=subparts[j].trim() }
+    console.log(i, subparts, NowISO8601());
+    
+    cmd       = subparts[0];
+    
+    switch ( cmd  ) {
+      case 'inquire':
+        let question = subparts[1];
+        let answer   = 'some string answer'
+        switch ( question ) {
+          case 'APP_NAME': 
+              answer = APP_NAME;
+            break;
+          case 'CACHE_NAME':
+              answer = CACHE_NAME;
+            break;
+          case 'VER':
+          case 'VERSION':
+              answer = APP_VERSION;
+            break;
+          case 'CACHE_DATE':
+            
+              // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
+              //answer = 
+            break;
+          case 'CACHE_LIST':
+              let listOfURLs =  await listCachedURLs(CACHE_NAME) ;
+              let strTmp = listOfURLs.toString() ;
+              answer = 'The cached URLs in ' + CACHE_NAME + ' are \n' + 
+               strTmp.split(',').join(LF) + NowISO8601() + LF ;
+            break;
+          case 'ALL':
+            
+            break;
+        
+          default:
+            break;
+        }// end switch on inquire-->subtopic
+        console.log(question,answer);
+        //broadcastChannel.postMessage({about:'reply to inquire', topic: question, value: answer })
+        postMessage_BroadcastChannel( {about:'reply to inquire', topic: question, value: answer } )
+
+      break;
+
+      case 'cacheTimeStamp':
+  
+        break;
+      case 'cacheList':
+            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + APP_VERSION +' ' + NowISO8601() + LF);
+            console.log('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
+          let strArrCachedURLs =   await listCachedURLs(CACHE_NAME) ;
+            console.log('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
+            console.log('end sw message_cmd cacheList '+ APP_VERSION +' ' + NowISO8601() + LF);
+        break;    
+  
+      case 'cacheRefresh':
+            console.log('in cacheRefresh '+ APP_VERSION +' ' + NowISO8601());
+          await caches.delete(CACHE_NAME);
+          await cacheLoad();
+            console.log('end of cacheRefresh ' + APP_VERSION +' ' + NowISO8601()  + LF);
+        break;    
+  
+        case 'cacheDelete':
+          console.log('In cacheDelete ' + APP_VERSION +' ' + NowISO8601()  );
+        await caches.delete(CACHE_NAME);
+          console.log('end of cacheDelete ' + APP_VERSION +' ' + NowISO8601() + LF  );      
+      break;
+  
+        
+      case 'goAway':
+            console.log('Goodbye, cold, cruel world. ' + APP_VERSION +' ' + NowISO8601() );
+          caches.delete(CACHE_NAME);
+          await self.registration.unregister();
+            console.log('I\'m me-e-e-l-l-ting '+ APP_VERSION +' ' + NowISO8601() );
+        break;  
+  
+      default:
+        break;
+    }  
+
+  }
+
+}
+
+async function processCommands(CommandString){
+  // 20230427 I now have a processInquiry routine, and am going to simplify this. And eliminate multiple commands.
+  // CommandString is Pascal-cased  TopicVerb PossibleObject like
+  // CacheRefresh   GoAway   CacheAdd ./options.xml             
+  let splitCmd = splitStringOnce( CommandString , COLON );
+  let strCommand = splitCmd.before;
+  let theParameters = splitCmd.after;  
+ //eventFetch.replies is an array of strings or Promises to be handled later in the ServiceWorker_fetch_typical routine.
+  let strResult = ''; //If we get a simple, 'synchronous' [really: sequential] result, store that. Otherwise, store the promise
+  let promResult = null;
+
+  switch ( strCommand  ) {
+    case 'CommandsList':
+        strResult = 'CacheDelete,CacheRefresh,BroadcastChannelClose,BroadcastChannelSwitch,ServiceWorkerUnregister,GoAway,CommandsList'
+      break;
+
+    case 'CacheRefresh':                
+        await cacheLoad();    
+        strResult = 'refreshed the cache ' + CACHE_NAME;      
+      break;    
+    case 'CacheDelete':
+          if(theParameters===NULL_STRING){theParameters=CACHE_NAME;} 
+        await caches.delete(theParameters);
+        strResult = 'deleted cache ' + theParameters;        
+      break;
+
+
+    case 'ServiceWorkerUnregister':
+        await self.registration.unregister();
+        strResult = 'Unregistered ServiceWorker ' + self.location.href + ' at ' + NowISO8601();
+      break;
+
+    case 'GoAway':
+          console.log('Goodbye, cold, cruel world. ' + APPandVER +' ' + NowISO8601() );
+        caches.delete(CACHE_NAME);
+        await self.registration.unregister();
+          console.log('I\'m me-e-e-l-l-ting '+ APPandVER +' ' + NowISO8601() );
+        strResult = 'Deleted cache ' + CACHE_NAME + ' and unregistered ServiceWorker '+ APPandVER + ' ' + self.location.href + ' ' + NowISO8601(); 
+      break;  
+
+    case 'BroadcastChannelClose':
+// this needs testing.
+        postMessageALL({text:'ServiceWorker ' +APPandVER +' is about to close BroadcastChannel ' + broadcastChannel.name })
+        strResult = 'ServiceWorker ' +APPandVER +' closed BroadcastChannel ' + broadcastChannel.name +' '+ NowISO8601() 
+        broadcastChannel.close();
+      break;
+    case 'BroadcastChannelSwitch':
+// this needs testing.      
+          if(theParameters===NULL_STRING){theParameters = APPandVER; } 
+        postMessageALL({text:'ServiceWorker ' + APPandVER +' is about to close BroadcastChannel ' + broadcastChannel.name +
+           ' and switch to ' + theParameters })
+       strResult = 'ServiceWorker ' +APPandVER +' closed BroadcastChannel ' + broadcastChannel.name +' '+ NowISO8601()  
+       broadcastChannel.close(); // should I removeEventListener? Does old event listener continue on new channel?
+
+        broadcastChannel.open(theParameters)
+        postMessageALL({text: 'ServiceWorker ' +APPandVER +' now broadcasting on BroadcastChannel ' + broadcastChannel.name +' '+ NowISO8601() } ) ;
+        strResult = strResult + LF +
+          'ServiceWorker ' +APPandVER +' now broadcasting on BroadcastChannel ' + broadcastChannel.name +' '+ NowISO8601()
+      break;
+
+    default:
+      strResult = 'Did not recognize command "'+ strCommand  +'"  . Check capitalization and spelling.   CommandsList to see known values.'  ;
+      break;
+  }  
+  console.log(strResult); //ALWAYS log to console, in case Messages are not working right
+  return( strResult ) ;
+} // end of process commands
+
+function BroadCastChannel_STOP(ChannelName){
+  let msg = 'ServiceWorker ' + APPandVER+' '+self.location.href ;
+  if(broadcastChannel){
+    msg = msg +  ' is about to close BroadcastChannel ' + broadcastChannel.name;
+    console.log(msg, NowISO8601());
+    postMessageALL({text:msg});
+    broadcastChannel.close();
+    broadcastChannel = null;
+  } else {
+    msg=msg + ' tried to close BroadcastChannel, but it had none already' 
+    console.log(msg, NowISO8601());
+    postMessageALL({text:msg});
+  }
+}
+
+function BroadCastChannel_START(ChannelName){
+  if(broadcastChannel){
+    let msg = 'ServiceWorker ' + APPandVER+' '+self.location.href+  
+                ' is about to close BroadcastChannel ' + broadcastChannel.name + 
+                ' and switch to ' + ChannelName ;
+    console.log(msg, NowISO8601());
+    postMessageALL({text:msg});
+    broadcastChannel.close();
+    broadcastChannel = null;
+  }
+  if(!ChannelName){
+    //??  just exit, or set a default name?
+    console.log(APPandVERandHREF + ' got a blank channel name, so it was set to a default value of '+ APPandVER,NowISO8601() );
+    ChannelName = APPandVER;
+  }
+
+  broadcastChannel = new BroadcastChannel(ChannelName);
+  broadcastChannel.addEventListener('message', ServiceWorker_message );
+  broadcastChannel.addEventListener('messageerror', ServiceWorker_messageError );    
+  let msg = 'ServiceWorker ' + APPandVER+' '+self.location.href+  
+   ' is now using BroadcastChannel ' + broadcastChannel.name;
+  console.log(msg, NowISO8601());
+  postMessageALL({text:msg});
+
+}
 
 
 // All of these postMessage functions accept only the first, plain object, and do not handle target origin, or transferable objects.
@@ -897,8 +1062,13 @@ function postMessage_BroadcastChannel(objMessage){
   addSourceAndTimeToMessageObject(objMessage);
 
   objMessage.how='BroadcastChannel '+ broadcastChannel.name;
-
-  broadcastChannel.postMessage(objMessage);
+  if(broadcastChannel){
+    broadcastChannel.postMessage(objMessage);
+  } else {
+    msg = APPandVERandHREF +' has no active BroadcastChannel but attempted to PostMessage ' + JSON.stringify(objMessage ) + ' '+NowISO8601();
+    console.log(msg);
+    postMessage_ALLClients({text:msg}); 
+  }
 }
 
 function postMessage_ALLClients(objMessage){
