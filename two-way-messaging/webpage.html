@@ -8,6 +8,7 @@
 </head>
 <script id="idSCRIPTDebuggingHelper010">
   const LF = "\n";
+  const EOL =';\n';
   function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
 
   function describeObject(obj){
@@ -37,6 +38,9 @@
 
     return(retVal);
   } //end of describeObject
+  // con sole.log('navigator within a webpage',
+  //   describeObject(navigator)
+  // );
 
   async function fetchTextAndWriteToElementValue(urlText , elmTarget, append = false ){
     let retVal='';    

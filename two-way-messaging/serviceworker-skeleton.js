@@ -17,6 +17,8 @@ const APOS="'";  const QUOTE_SINGLE="'";
 ////////////////////////////////////////////////////////////////////////////////
   // for debugging use.  LF,  NowISO8601, describeObject
     const LF = "\n";
+    const EOL = ';\n';
+
     
     function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
 
@@ -45,6 +47,8 @@ const APOS="'";  const QUOTE_SINGLE="'";
 
       return(retVal);
     } //end of describeObject
+    // con sole.log('navigator in a ServiceWorker', describeObject(navigator));
+    // con sole.log('self in a ServiceWorker', describeObject(self))
 ///////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////

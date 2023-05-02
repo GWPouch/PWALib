@@ -1,3 +1,40 @@
+////////////////////////////////////////////////////////////////////////////////
+  // for debugging use.  LF,  NowISO8601, describeObject
+  const LF = "\n";
+  const EOL = ';\n';
+
+  
+  function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
+
+  function describeObject(obj){
+    let retVal = 'ConstructorName: ' +  obj.constructor.name + EOL ;
+
+    retVal = retVal + ' enumerableMembers: [ ' ;
+    for(let key in obj){
+      retVal = retVal + key + ' , ' ;
+    }
+    retVal = retVal.substring(0,retVal.lastIndexOf( ' , ')) + '];\n' ; //get rid of final  ' , '   and replace with ];\n
+
+    // retVal = retVal + ' nonEnumerableMembers: [ ' ;
+    // let listProps = Object.getOwnPropertyNames(obj);
+    // for(let key2 in listProps ){
+    //   retVal = retVal + key2 + ' , ' ;
+    // }
+    // retVal = retVal  + '];\n' ;
+
+    // retVal = retVal  +  'allEnumerableMembers: [ ' ;
+    // for(let key3 in obj){
+    //   //https://stackoverflow.com/questions/208016/how-to-list-the-properties-of-a-javascript-object/32413145#32413145
+    //   retVal = retVal + key3 + ' , ' ; //stackoverflow claims this will get ancestor properties too
+    // }
+    // retVal = retVal  + '];\n' ;
+
+    return(retVal);
+  } //end of describeObject
+  // con sole.log('navigator in a Worker', describeObject(navigator));
+  // con sole.log('self in a Worker', describeObject(self))
+///////////////////////////////////////////////////////////////////////////////
+
   function messageReceiver(event){
     let theData = event.data
     console.log( writeMessageToString(event) );
@@ -15,7 +52,7 @@
 
   }
 
-  function NowISO8601(){ return(  (new Date).toISOString() )  }
+  // function NowISO8601(){ return(  (new Date).toISOString() )  }
  
 
   function showMessageInConsole(event){
