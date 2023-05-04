@@ -19,76 +19,6 @@ const APOS="'";  const QUOTE_SINGLE="'";
     const LF = "\n";
     const EOL = ';\n';
 
-    let strVariableSeparator = '    ' ;
-    // Using showDebug can give cryptic errors, if an object broadcastChannel or document.body does not exit yet.
-    //  Make sure calls to this only happen AFTER page is loaded, or you get cryptic errors.
-    // showDebug is used for the same purpose as console.debug or console.log, but can set to
-    //   to different functions to use the webpage, or some other mechanism to display the text.
-    let showDebug = function displayAsText(...dataToWrite){ } ; // could be dumpToPREWithLotsOfLines,  document.writeln,  or console.debug
-    showDebug = console.log.bind(console) ; // always safe
-    // showDebug = showAsPREWithLineForEachItem ; only in webpage
-    // showDebug = showAsPREAtEndAsOneLineWithSpaces ; // only in webpage
-    showDebug = showByPostingMessageToClients ;  // only in Worker, ServiceWorker,...
-    // showDebug = showByPostingMessageToBroadcastChannel ;// Safe in Worker, ServiceWorker,...  In a webpage, this might cause a stack overflow as the page keeps broadcasting the message.
-    
-    
-    function writeValuesOnOneLineWithSeparators(...dataToWrite){
-      let retVal = '';
-      for( let iArg=0;iArg<dataToWrite.length;iArg++){
-        retVal = retVal + ( dataToWrite[iArg] + strVariableSeparator  ); //there is an implicit string-conversion that might be better
-       }
-      return( retVal );  //? .trim() to get rid of trailing spaces ?
-    }
-    
-    function writeValuesToStringWithLinebreaks(...dataToWrite){
-      let retVal = '';
-      for( let iArg=0;iArg<dataToWrite.length;iArg++){
-        retVal = retVal + ( dataToWrite[iArg]  )  + LF  ;
-      }
-      return( retVal.substring(0, retVal.length-1)  );
-    }
-    
-    function writeValuesToStringWithPairsOnSeparateLine(...dataToWrite){
-      let retVal = '';
-      for( let iArg=0;iArg<dataToWrite.length;iArg = iArg +2){
-        retVal = retVal + ( dataToWrite[iArg]  + strVariableSeparator ) // always works 
-        if(iArg+1 <= (dataToWrite.length -1 ) ){ // check for odd number of input values
-          retVal = retVal +  dataToWrite[iArg+1] ; 
-        }  
-        retVal = retVal +  LF  ;
-      }
-      return( retVal.substring(0, retVal.length-1)  );
-    }
-    
-    
-    function showAsPREAtEndAsOneLineWithSpaces(...dataToWrite){
-      //replacement for console.debug()
-      
-      // 20230503 modified so it writes to an element, then appends it at the end of the document
-      let elm = document.createElement('pre');
-      elm.innerHTML = writeValuesOnOneLineWithSeparators(dataToWrite);
-      document.body.appendChild(elm);
-      return(elm)
-    }
-    
-    
-    function showAsPREWithLineForEachItem(...dataToWrite){
-      //replacement for cons(ole.debug()
-      let elm = document.createElement('pre')
-      document.body.appendChild(elm);  
-      elm.innerHTML = writeValuesToStringWithLinebreaks(dataToWrite);
-      return ( elm );
-    }
-
-    function showByPostingMessageToClients(...dataToWrite){
-        postMessage_ALLClients({SHOW_DEBUG: writeValuesOnOneLineWithSeparators(dataToWrite)  }) ;
-    }
-
-    function showByPostingMessageToBroadcastChannel(...dataToWrite){
-      postMessage_BroadcastChannel({SHOW_DEBUG: writeValuesOnOneLineWithSeparators(dataToWrite)  }) ;
-    }
-
-
     
     function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
 
@@ -229,7 +159,7 @@ function ServiceWorker_install(eventInstall){
   //   the install event happens immediately, but it remains in a waiting-state (called installed) until the user navigates away from that page. 
   // so calling self.skipWaiting()  is not a terrible idea for a simple should-be-file:// monolithic page. 
 
-  showDebug(
+  console.log(
     'In start of ServiceWorker_install  event listener for install  ' +
          APP_NAME + ' ' + APP_VERSION +' ' + NowISO8601() 
   );
@@ -237,11 +167,11 @@ function ServiceWorker_install(eventInstall){
   eventInstall.waitUntil( cacheLoad()   );
   eventInstall.waitUntil( self.skipWaiting()  ); // from https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
 
-  showDebug(
+  console.log(
     'At end of ServiceWorker_install    event listener for install  ' +
          APPandVERandHREF + NowISO8601() 
   );
-  showDebug(LF);
+  console.log(LF);
 
 } // end of ServiceWorker_install
       
@@ -251,11 +181,11 @@ function ServiceWorker_activate(eventActivate){
   //  On a first visit, activate happens right after install.
   //  
   // clean up old caches, maybe transferring their contents to new caches
-  showDebug( 'ServiceWorker_activate start', /*self.state,*/  NowISO8601());
+  console.log( 'ServiceWorker_activate start', /*self.state,*/  NowISO8601());
       // con sole.log('about to send message using postMessage_ALLClients')
       postMessageALL({what: 'ServiceWorker_activate', who:APPandVERandHREF})
       eventActivate.waitUntil( self.clients.claim() )  ; // https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
-  showDebug( 'ServiceWorker_activate end', NowISO8601());
+  console.log( 'ServiceWorker_activate end', NowISO8601());
 }
 
 function ServiceWorker_fetch_zzOLD(eventFetch){
@@ -266,7 +196,7 @@ function ServiceWorker_fetch_zzOLD(eventFetch){
 
   let txtMsg ='message for console.log and postMessage and such';
   txtMsg = 'serviceworker fetch event in ' + APP_NAME + ' ' + APP_VERSION + ' for ' + eventFetch.request.url + ' at ' + NowISO8601()
-  showDebug(txtMsg );
+  console.log(txtMsg );
 
   //allow URL commands to work like postMessage({cmd:SomeCommand})
   
@@ -277,11 +207,11 @@ function ServiceWorker_fetch_zzOLD(eventFetch){
       let cmd = decodeURIComponent( theURL.searchParams.get(K_strServiceWorkerCommand) );
       //? maybe delete the searchParameter and pass this along to the RespondWith bit
       theURL.searchParams.delete(K_strServiceWorkerCommand);
-      showDebug('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ APP_VERSION +' ' + NowISO8601()  );
+      console.log('URL contained search parameter '+ K_strServiceWorkerCommand  +': ' + cmd + '    ' + APP_NAME +' '+ APP_VERSION +' ' + NowISO8601()  );
       processCommands( cmd );
       // at this point, we could exit by returning, 
       // or continue on to respondWith bit.
-      showDebug(theURL.href);
+      console.log(theURL.href);
       reqCopy =cloneRequestToNewURL( reqCopy,  (theURL.href) ); 
       // return ; //this might be a terrible exit
     }
@@ -298,25 +228,25 @@ function ServiceWorker_fetch_zzOLD(eventFetch){
         // Get the resource from the cache.
         const cachedResponse = await cache.match(reqCopy, optionsForMatch);
         if (cachedResponse) {
-          showDebug( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
+          console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
           return cachedResponse; //  
         } else {
             try {
               // If the resource was not in the cache, try the network.
               const fetchResponse = await fetch(reqCopy);
-              showDebug( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
+              console.log( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
                   // DOES NOT CACHE retrieved files not in the initial list.
                   // // Save the resource in the cache and return it.
                   // cache.put(event.request, fetchResponse.clone());
               return fetchResponse;
             } catch (e) {
               // The network failed
-               showDebug('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
+               console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
             }
         }
     })());
 
-    showDebug('ServiceWorker_fetch_zzOLD event end  '+NowISO8601() );
+    console.log('ServiceWorker_fetch_zzOLD event end  '+NowISO8601() );
 
 
 } // end of ServiceWorker_fetch_zzOLD
@@ -335,7 +265,7 @@ function ServiceWorker_fetch_typical(eventFetch){
   
   let txtMsg ='message for console.log and postMessage and such';
   txtMsg = 'ServiceWorker_fetch_typical for fetch event in ' + APPandVER +' for request.url= ' + eventFetch.request.url + ' at ' + NowISO8601()
-  showDebug(txtMsg );
+  console.log(txtMsg );
 
   if(eventFetch.replies.length){
     let replies = eventFetch.replies;
@@ -360,7 +290,7 @@ function ServiceWorker_fetch_typical(eventFetch){
         // for(let i=0; i<eventFetch.replies.length;i++){
         //   retVal= retVal+LF+eventFetch.replies[i];
         // }
-        eventFetch.replies.forEach((line)=>{retVal = retVal + LF + line;  showDebug(line)   })
+        eventFetch.replies.forEach((line)=>{retVal = retVal + LF + line;  console.log(line)   })
         retVal = retVal.substring(1); //get rid of the extra line feed at the beginning
         return(new Response(retVal));
       })());
@@ -377,27 +307,27 @@ function ServiceWorker_fetch_typical(eventFetch){
       // Get the resource from the cache.
       const cachedResponse = await cache.match(eventFetch.request, optionsForMatch);
       if (cachedResponse) {
-        showDebug( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
+        console.log( '  fetch of '+ eventFetch.request.url + ' came from LOCAL CACHE ' +CACHE_NAME + ' '  + ' ' + NowISO8601() ) ;
         return cachedResponse; //  
       } else {
           try {
             // If the resource was not in the cache, try the network.
             const fetchResponse = await fetch(eventFetch.request);
-            showDebug( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
+            console.log( '  fetch of '+ eventFetch.request.url + ' came from WEB SERVER '  + NowISO8601() ) ;
                 // DOES NOT CACHE retrieved files not in the initial list.
                 // // Save the resource in the cache and return it.
                 // cache.put(event.request, fetchResponse.clone());
             return fetchResponse;
           } catch (e) {
             // The network failed
-             showDebug('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
+             console.log('  fetch of ' + eventFetch.request.url + ' for '+ APP_NAME + ' '+ APP_VERSION  + ' FAILED '   + error );
           } //close try block on getting from network
       }// close if on found cached response
     })//close defining async arrow function
     () //invoke the async arrow function
     ); //close respondWith
   }
-  showDebug('ServiceWorker_fetch_typical event end  ' + NowISO8601() );
+  console.log('ServiceWorker_fetch_typical event end  ' + NowISO8601() );
 
 
 }
@@ -412,7 +342,7 @@ function ServiceWorker_fetch_begin(eventFetch){
 
 function ServiceWorker_fetch_command(eventFetch){
     
-    showDebug('Starting ServiceWorker_fetch_command', eventFetch.request.url, NowISO8601())
+    console.log('Starting ServiceWorker_fetch_command', eventFetch.request.url, NowISO8601())
     const K_strServiceWorkerCommand_RAW='QqServiceWorkerCommandQq'+APP_NAME+'Qq'+APP_VERSION+'Qq'   ;// this is the form used in searchParams.get
     const K_strServiceWorkerCommand_esc  = encodeURIComponent(K_strServiceWorkerCommand_RAW);        // it must be in URI-escaped form in actual URL.
   
@@ -449,7 +379,7 @@ function ServiceWorker_fetch_command(eventFetch){
       let objURL = new URL( txtURL );
       let command = decodeURIComponent( objURL.searchParams.get( (K_strServiceWorkerCommand_RAW)) ).trim();
      // at this point, inquiry has ALL the inquiry (even if looks like "CACHE_CONTAINS : http://example.com/index")
-       showDebug('Command  URL contained command parameter '+ K_strServiceWorkerCommand_esc  +': ' + command + '    ' + APPandVER +' ' + NowISO8601()  );
+       console.log('Command  URL contained command parameter '+ K_strServiceWorkerCommand_esc  +': ' + command + '    ' + APPandVER +' ' + NowISO8601()  );
    
        let promReply = processCommands( command ) ; //annoyingly, 
        // processCommands _really_ returns a string, but because it's an async function, we have to treat the return value as a promise. 
@@ -458,7 +388,7 @@ function ServiceWorker_fetch_command(eventFetch){
    
 
 function ServiceWorker_fetch_inquire(eventFetch){
-  showDebug('Starting  ServiceWorker_fetch_inquire', eventFetch.request.url, NowISO8601())
+  console.log('Starting  ServiceWorker_fetch_inquire', eventFetch.request.url, NowISO8601())
   // A long inquire string is good because it's unlikely to collide,
   //   but is hard to type and can cause other problems with URI-encoding
   const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+APP_VERSION+'Qq')   ; // this is the form used in searchParams.get
@@ -502,7 +432,7 @@ return ;
     //QqServiceWorkerInquireQqWindow ServiceWorkerCommunicatorQqv.031Qq CACHE_DATE
     //  got bit by a + in the APP_NAME that turned into a space
 
-    showDebug('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inquiry + '    ' + APPandVER +' ' + NowISO8601()  );
+    console.log('inquire  URL contained inquiry parameter '+ K_strServiceWorkerInquire_esc  +': ' + inquiry + '    ' + APPandVER +' ' + NowISO8601()  );
 
     let promReply = processInquiry( inquiry ) ; 
     eventFetch.replies.push(promReply);
@@ -535,7 +465,7 @@ return;
       let cmdString = cmd.toString();
       let reply = processCommands( cmdString );
       reply.then( (ans)=>{
-        showDebug(APPandVERandHREF +' handled command in message ', cmdString, ans, NowISO8601() );
+        console.log(APPandVERandHREF +' handled command in message ', cmdString, ans, NowISO8601() );
         postMessageALL({theCommand: cmdString, theResponse: ans});
 return;
       })   
@@ -555,7 +485,7 @@ return;
       
   } catch (error) {
     // ignore errors here
-    showDebug('catch block of ServiceWorker_message '+ error , NowISO8601());
+    console.log('catch block of ServiceWorker_message '+ error , NowISO8601());
   }
   // DO NOT SET UP AN ENDLESS LOOP broadcastChannel.postMessage( {txt:'this is a stupid message from the serviceWorker in ServiceWorker_message ',when: NowISO8601()})
 
@@ -564,12 +494,12 @@ return;
 function ServiceWorker_messageError(eventMessageError){
   // according to The service worker client is sent a message that cannot be deserialized from a service worker. See postMessage(message, options).
   // The service worker client is sent a message that cannot be deserialized from a service worker. See postMessage(message, options).
-  showDebug( 'messageerror event occurred ' + JSON.stringify(eventMessageError) +' ' + eventMessageError.constructor.name +' ' + NowISO8601() )
+  console.log( 'messageerror event occurred ' + JSON.stringify(eventMessageError) +' ' + eventMessageError.constructor.name +' ' + NowISO8601() )
 
 
 }
 function ServiceWorker_stateChange(eventStateChange){
-  showDebug('serviceworker state change   new state is _' + screenLeft.state +'_ ' + NowISO8601()  );
+  console.log('serviceworker state change   new state is _' + screenLeft.state +'_ ' + NowISO8601()  );
 
 }
 
@@ -586,7 +516,7 @@ function writeMessageToString(eventMessage){
   } catch (error) {
     //ignore errors here
     let errorMsg = 'Error catch-ed in writeMessageToString() in serviceworker ' + error + ' ' + NowISO8601();
-    showDebug( errorMsg);
+    console.log( errorMsg);
     retVal = retVal + errorMsg
   }
 return( retVal );
@@ -594,7 +524,7 @@ return( retVal );
 
 
 async function cacheLoad(){
-  showDebug('start of cacheLoad in serviceWorker', self.location.href, NowISO8601() )
+  console.log('start of cacheLoad in serviceWorker', self.location.href, NowISO8601() )
 
   // in MSEdge, cache.addAll works, even if given a bad URL
   // in Chrome, it fails and doesn't add ANY of the pages if one is not found
@@ -625,10 +555,10 @@ async function cacheLoad(){
           (result)=>{ 
             if(result.status==='fulfilled'){
               nLoaded = nLoaded + 1;
-              showDebug('  loaded '+ CACHE_FILES_LIST[n]  );
+              console.log('  loaded '+ CACHE_FILES_LIST[n]  );
               arrFinalNames[n] = result.value ;
             } else {
-              showDebug('  did not load ' + CACHE_FILES_LIST[n] );
+              console.log('  did not load ' + CACHE_FILES_LIST[n] );
               arrFinalNames[n] = result.reason;
             }
             n = n + 1;
@@ -640,7 +570,7 @@ async function cacheLoad(){
           new Response(  NowISO8601() )  ) ;
       } catch (error) {
         // this should only happen if a cached CACHE_TIMESTAMP_NAME is already there
-        showDebug('error trying to put ' + CACHE_TIMESTAMP_NAME ,error)
+        console.log('error trying to put ' + CACHE_TIMESTAMP_NAME ,error)
       }
       
       // await list CachedURLs(CACHE_NAME);
@@ -691,19 +621,19 @@ async function cacheGetDate4() {
   let dateOfCache='Alice';
  
 // let response = await fetch('./' + CACHE_TIMESTAMP_NAME); // this seems to not trigger ServiceWorker_fetch_typical, so it doesn't hit the cache at all
-  showDebug('in cacheGetDate')
-showDebug(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
+  console.log('in cacheGetDate')
+console.log(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
   let cache = await self.caches.open(CACHE_NAME);
-  showDebug(cache)
-showDebug(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
+  console.log(cache)
+console.log(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
   let response = await cache.match(CACHE_TIMESTAMP_NAME);
-  showDebug('response', CACHE_TIMESTAMP_NAME ,response)
-showDebug(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
+  console.log('response', CACHE_TIMESTAMP_NAME ,response)
+console.log(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
 
   dateOfCache = await response.text();
-showDebug(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
+console.log(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
 
-  showDebug('date returned',dateOfCache)
+  console.log('date returned',dateOfCache)
   // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
   return( dateOfCache );
   
@@ -714,23 +644,23 @@ async function cacheGetDate5() {
  
 let response0 = await fetch('./' + CACHE_TIMESTAMP_NAME); // this seems to not trigger ServiceWorker_fetch_typical, so it doesn't hit the cache at all
 
-showDebug(response0,response0.text())
+console.log(response0,response0.text())
 
 
 
-showDebug('in cacheGetDate')
-showDebug(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
+console.log('in cacheGetDate')
+console.log(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
   let cache = await self.caches.open(CACHE_NAME);
-  showDebug(cache)
-showDebug(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
+  console.log(cache)
+console.log(dateOfCache, NowISO8601(),`after let cache = await self.caches.open(CACHE_NAME);`);      
   let response = await cache.match(CACHE_TIMESTAMP_NAME);
-  showDebug('response', CACHE_TIMESTAMP_NAME ,response)
-showDebug(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
+  console.log('response', CACHE_TIMESTAMP_NAME ,response)
+console.log(dateOfCache, NowISO8601(),`after let response = await cache.match(CACHE_TIMESTAMP_NAME);`);
 
   dateOfCache = await response.text();
-showDebug(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
+console.log(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
 
-  showDebug('date returned',dateOfCache)
+  console.log('date returned',dateOfCache)
   // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
   return( dateOfCache );
   
@@ -740,7 +670,7 @@ showDebug(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
 
 async function cacheGetDate5a() {
   let dateOfCache='Alice';
-  showDebug('cacheGetDate finished', 'date returned',dateOfCache)
+  console.log('cacheGetDate finished', 'date returned',dateOfCache)
 // con2 sole.log('in cacheGetDate')
 // con2 sole.log(dateOfCache, NowISO8601(),` after dateOfCache='Alice';`);        
   let cache = await self.caches.open(CACHE_NAME);
@@ -753,7 +683,7 @@ async function cacheGetDate5a() {
   dateOfCache = await response.text();
 // con2 sole.log(dateOfCache, NowISO8601(),`after  answer = await response.text();`);
 
-  showDebug('cacheGetDate finished', 'date returned',dateOfCache)
+  console.log('cacheGetDate finished', 'date returned',dateOfCache)
   // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
   return( dateOfCache );
   
@@ -761,20 +691,20 @@ async function cacheGetDate5a() {
 async function cacheGetDate6(question) {
   // this version actually works
   let dateOfCache='Alice';
-  showDebug('cacheGetDate started', '',dateOfCache,NowISO8601())
+  console.log('cacheGetDate started', '',dateOfCache,NowISO8601())
     // the cache=  response=   schtick  works, but  let response = fetch(CACHE_TIMESTAMP_NAME) fails, somehow
   let cache = await self.caches.open(CACHE_NAME);
-  showDebug('getIt started   let cache = await self.caches.open(CACHE_NAME)',cache,NowISO8601())
+  console.log('getIt started   let cache = await self.caches.open(CACHE_NAME)',cache,NowISO8601())
   let response = await cache.match(CACHE_TIMESTAMP_NAME);
-  showDebug('getIt           let response = await cache.match(CACHE_TIMESTAMP_NAME);',response,NowISO8601())
+  console.log('getIt           let response = await cache.match(CACHE_TIMESTAMP_NAME);',response,NowISO8601())
     // let response = fetch( './' + CACHE_TIMESTAMP_NAME)          
       dateOfCache = await response.text();
-      showDebug('getIt           finished', 'date returned',dateOfCache,NowISO8601())
+      console.log('getIt           finished', 'date returned',dateOfCache,NowISO8601())
   // };
   // let prom = getIt();
-  // showDebug('cacheGetDate   let prom = getIt();', '', prom, NowISO8601())
+  // console.log('cacheGetDate   let prom = getIt();', '', prom, NowISO8601())
   // dateOfCache = prom.resolved;
-  // showDebug('cacheGetDate   dateOfCache = prom.resolved;', '',dateOfCache,NowISO8601())
+  // console.log('cacheGetDate   dateOfCache = prom.resolved;', '',dateOfCache,NowISO8601())
   // fetch CACHE_TIMESTAMP_NAME  from the cache, get the contents into answer 
   return( question +COLON +  dateOfCache );
   
@@ -928,7 +858,7 @@ async function processCommands1(strCommand){
     i++;
     let subparts=part.split(COLON);
       for(let j=0; j<subparts.length;j++){ subparts[j]=subparts[j].trim() }
-    showDebug(i, subparts, NowISO8601());
+    console.log(i, subparts, NowISO8601());
     
     cmd       = subparts[0];
     
@@ -965,7 +895,7 @@ async function processCommands1(strCommand){
           default:
             break;
         }// end switch on inquire-->subtopic
-        showDebug(question,answer);
+        console.log(question,answer);
         //broadcastChannel.postMessage({about:'reply to inquire', topic: question, value: answer })
         postMessage_BroadcastChannel( {about:'reply to inquire', topic: question, value: answer } )
 
@@ -975,32 +905,32 @@ async function processCommands1(strCommand){
   
         break;
       case 'cacheList':
-            showDebug('sw message_cmd cacheList '+ CACHE_NAME + '     ' + APP_VERSION +' ' + NowISO8601() + LF);
-            showDebug('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
+            console.log('sw message_cmd cacheList '+ CACHE_NAME + '     ' + APP_VERSION +' ' + NowISO8601() + LF);
+            console.log('    ', CACHE_NAME,'  ', CACHE_FILES_LIST, NowISO8601());
           let strArrCachedURLs =   await listCachedURLs(CACHE_NAME) ;
-            showDebug('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
-            showDebug('end sw message_cmd cacheList '+ APP_VERSION +' ' + NowISO8601() + LF);
+            console.log('    ', 'the cached URLs are ' + LF + strArrCachedURLs.toString().split(',').join(LF) )
+            console.log('end sw message_cmd cacheList '+ APP_VERSION +' ' + NowISO8601() + LF);
         break;    
   
       case 'cacheRefresh':
-            showDebug('in cacheRefresh '+ APP_VERSION +' ' + NowISO8601());
+            console.log('in cacheRefresh '+ APP_VERSION +' ' + NowISO8601());
           await caches.delete(CACHE_NAME);
           await cacheLoad();
-            showDebug('end of cacheRefresh ' + APP_VERSION +' ' + NowISO8601()  + LF);
+            console.log('end of cacheRefresh ' + APP_VERSION +' ' + NowISO8601()  + LF);
         break;    
   
         case 'cacheDelete':
-          showDebug('In cacheDelete ' + APP_VERSION +' ' + NowISO8601()  );
+          console.log('In cacheDelete ' + APP_VERSION +' ' + NowISO8601()  );
         await caches.delete(CACHE_NAME);
-          showDebug('end of cacheDelete ' + APP_VERSION +' ' + NowISO8601() + LF  );      
+          console.log('end of cacheDelete ' + APP_VERSION +' ' + NowISO8601() + LF  );      
       break;
   
         
       case 'goAway':
-            showDebug('Goodbye, cold, cruel world. ' + APP_VERSION +' ' + NowISO8601() );
+            console.log('Goodbye, cold, cruel world. ' + APP_VERSION +' ' + NowISO8601() );
           caches.delete(CACHE_NAME);
           await self.registration.unregister();
-            showDebug('I\'m me-e-e-l-l-ting '+ APP_VERSION +' ' + NowISO8601() );
+            console.log('I\'m me-e-e-l-l-ting '+ APP_VERSION +' ' + NowISO8601() );
         break;  
   
       default:
@@ -1044,10 +974,10 @@ async function processCommands(CommandString){
       break;
 
     case 'GoAway':
-          showDebug('Goodbye, cold, cruel world. ' + APPandVER +' ' + NowISO8601() );
+          console.log('Goodbye, cold, cruel world. ' + APPandVER +' ' + NowISO8601() );
         caches.delete(CACHE_NAME);
         await self.registration.unregister();
-          showDebug('I\'m me-e-e-l-l-ting '+ APPandVER +' ' + NowISO8601() );
+          console.log('I\'m me-e-e-l-l-ting '+ APPandVER +' ' + NowISO8601() );
         strResult = 'Deleted cache ' + CACHE_NAME + ' and unregistered ServiceWorker '+ APPandVER + ' ' + self.location.href + ' ' + NowISO8601(); 
       break;  
 
@@ -1075,7 +1005,6 @@ async function processCommands(CommandString){
       strResult = 'Did not recognize command "'+ strCommand  +'"  . Check capitalization and spelling.   CommandsList to see known values.'  ;
       break;
   }  
-  showDebug(strResult); // this can result in results appearing twice in the console
   console.log(strResult); //ALWAYS log to console, in case Messages are not working right
   return( strResult ) ;
 } // end of process commands
@@ -1085,13 +1014,11 @@ function BroadCastChannel_STOP(ChannelName){
   if(broadcastChannel){
     msg = msg +  ' is about to close BroadcastChannel ' + broadcastChannel.name;
     console.log(msg, NowISO8601());
-    showDebug(msg,NowISO8601());
     postMessageALL({text:msg});
     broadcastChannel.close();
     broadcastChannel = null;
   } else {
     msg=msg + ' tried to close BroadcastChannel, but it had none already' 
-    showDebug(msg,NowISO8601());
     console.log(msg, NowISO8601());
     postMessageALL({text:msg});
   }
@@ -1102,7 +1029,6 @@ function BroadCastChannel_START(ChannelName){
     let msg = 'ServiceWorker ' + APPandVER+' '+self.location.href+  
                 ' is about to close BroadcastChannel ' + broadcastChannel.name + 
                 ' and switch to ' + ChannelName ;
-    showDebug(msg,NowISO8601());                
     console.log(msg, NowISO8601());
     postMessageALL({text:msg});
     broadcastChannel.close();
@@ -1110,9 +1036,7 @@ function BroadCastChannel_START(ChannelName){
   }
   if(!ChannelName){
     //??  just exit, or set a default name?
-    let msg = APPandVERandHREF + ' got a blank channel name, so it was set to a default value of ' + APPandVER + '  '+ NowISO8601() ; 
-    showDebug(msg);
-    console.log(msg);
+    console.log(APPandVERandHREF + ' got a blank channel name, so it was set to a default value of '+ APPandVER,NowISO8601() );
     ChannelName = APPandVER;
   }
 
@@ -1121,7 +1045,6 @@ function BroadCastChannel_START(ChannelName){
   broadcastChannel.addEventListener('messageerror', ServiceWorker_messageError );    
   let msg = 'ServiceWorker ' + APPandVER+' '+self.location.href+  
    ' is now using BroadcastChannel ' + broadcastChannel.name;
-  showDebug(msg,NowISO8601());
   console.log(msg, NowISO8601());
   postMessageALL({text:msg});
 
@@ -1131,8 +1054,8 @@ function BroadCastChannel_START(ChannelName){
 // All of these postMessage functions accept only the first, plain object, 
 //   and do not handle target origin, or transferable objects.
 function addSourceAndTimeToMessageObject(objMessage){
-  objMessage.who = 'ServiceWorker ' + APP_NAME + ' ' + APP_VERSION   ;
-  objMessage.whoURL = self.location.href;
+  objMessage.from='ServiceWorker ' + APP_NAME + ' ' + APP_VERSION   ;
+  objMessage.fromURL=self.location.href;
   objMessage.when=NowISO8601();
   
   return( objMessage ) ;// in case callerBoy use   let fixedMessage=addSourceAndTimeToMessageObject(   )
