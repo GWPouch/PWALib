@@ -11,6 +11,8 @@
   const LF = "\n";
   const EOL =';\n';
 let strVariableSeparator = '    ' ;
+// let dbgPrefix = document.location.pathname this is a bad idea: If I am using a webpage's broadcastChannel message event to display SHOW_DEBUG messages, how would From or some such be set?  The page? the serviceWorker? ???   better to tag it inline in the call
+
 // Using showDebug can give cryptic errors, if an object broadcastChannel or document.body does not exit yet.
 //  Make sure calls to this only happen AFTER page is loaded, or you get cryptic errors.
 let showDebug = function displayAsText(...dataToWrite){ } ; // could be dumpToPREWithLotsOfLines,  document.writeln,  or console.debug
@@ -234,7 +236,9 @@ function postMessage_BroadcastChannel(objMessage){
   }
 }
 
-
+function webpage_ServiceWorkerStateChange(eventServiceWorkerStateChange){
+  showDebug('webpage_ServiceWorkerStateChange', NowISO8601(), 'new state is ', theServiceWorker.state);
+}
 
 async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' , relScopeOfServiceWorker ='./' ){
         var promRegistration = null;
@@ -250,7 +254,9 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
               // two of the swRegistration .active .waiting .installing will be null. We probably get the value from  .waiting.
               theServiceWorker = ( swRegistration.waiting || swRegistration.installing || swRegistration.active);    
               theServiceWorker.addEventListener('message', WebPage_message_Client) ;
-              
+              showDebug('about to  theServiceWorker.addEventListener( \'statechange\' ,webpage_ServiceWorkerStateChange) ');
+              theServiceWorker.addEventListener( 'statechange' ,webpage_ServiceWorkerStateChange) ; 
+
               // con sole.log('theServiceWorker is a ' + theServiceWorker.constructor.name );
               
                 //this sends a message to the serviceWorker 

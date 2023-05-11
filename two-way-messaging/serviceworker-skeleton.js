@@ -151,6 +151,11 @@ const APOS="'";  const QUOTE_SINGLE="'";
   const SERVICEWORKER_SOURCE_FILE = self.location.href
   const SERVICEWORKER_LOADED = NowISO8601();
 
+  let myRegistrationObj = null ;
+  let myServiceWorkerObj = null;
+  let myServiceWorkerState = 'UNLV';
+
+
 ///////////////////////////////////////////////////////////////////////////////
 
 
@@ -171,8 +176,7 @@ function ServiceWorker_initialize(){
   // set 'global' variables (accessible only to the ServiceWorker and its children)
 
 //  maybe cache_name and such should be read from an XML file at startup during initialize
-
-  APP_NAME=  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
+  APP_NAME =  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
   APP_VERSION = 'v.031'; // this MUST come before setting up the broadcast channel and 
                  //     sending out a test message, because we use VER in the adorned message
   APPandVER = APP_NAME + ' '+ APP_VERSION ;
@@ -233,6 +237,14 @@ function ServiceWorker_install(eventInstall){
     'In start of ServiceWorker_install  event listener for install  ' +
          APP_NAME + ' ' + APP_VERSION +' ' + NowISO8601() 
   );
+
+  myRegistrationObj = self.registration;
+  // getting the ServiceWorker state and such does not work in that initialize event.
+  myServiceWorkerObj = (myRegistrationObj.waiting || myRegistrationObj.active ||  myRegistrationObj.installing );
+    //the above line only works if the serviceworker is installing/installed, active/activating, or waiting
+  myServiceWorkerObj.addEventListener( 'statechange' ,ServiceWorker_stateChange) ;
+  myServiceWorkerState = myServiceWorkerObj.state;
+
 
   eventInstall.waitUntil( cacheLoad()   );
   eventInstall.waitUntil( self.skipWaiting()  ); // from https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
@@ -569,8 +581,8 @@ function ServiceWorker_messageError(eventMessageError){
 
 }
 function ServiceWorker_stateChange(eventStateChange){
-  showDebug('serviceworker state change   new state is _' + screenLeft.state +'_ ' + NowISO8601()  );
-
+  showDebug('serviceworker ServiceWorker_stateChange. Old state was '+ myServiceWorkerState +' .  New state is ' + myServiceWorkerObj.state +' . ' + NowISO8601()  );
+  myServiceWorkerState = myServiceWorkerObj.state;
 }
 
 // this could be an internal function of a single eventMessage handler
