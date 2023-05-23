@@ -1,0 +1,12 @@
+{
+  "APP_NAME":"WindowAndServiceWorkerCommunicator",
+  "APP_VERSION":"v.032",
+  "CACHE_FILES_LIST":[
+    "./MajorGeneralSong.html",
+    "./webpage.html",
+    "./webpage.js",
+    "./webpage.css",
+    "./",
+    "./ListedInJSON.html"
+  ]
+}

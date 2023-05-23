@@ -133,9 +133,9 @@ function showAsPREWithLineForEachItem(...dataToWrite){
 
 <script id="idSCRIPTServiceWorker030">
 
-const APP_NAME = 'Window+ServiceWorkerCommunicator';
-const VER = 'v.031'
-const APPandVER = APP_NAME + ' '+VER;
+let APP_NAME = 'Window+ServiceWorkerCommunicator';
+let APP_VERSION = 'v.031'
+const APPandVER = APP_NAME + ' '+ APP_VERSION;
 
 
 let theServiceWorker = null;
@@ -248,7 +248,7 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
            promRegistration.then( 
             (swRegistration)=>{
               // con sole.log(' resolved serviceWorker registration at ' + NowISO8601());
-
+// how to get the ServiceWorker's APP_NAME and APP_VERSION
               theAnswerToLifeTheUniverseAndEverything = 42;
               theServiceWorkerRegistration = swRegistration;
               // two of the swRegistration .active .waiting .installing will be null. We probably get the value from  .waiting.
@@ -276,7 +276,7 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
                 // if(swRegistration.waiting){ theServiceWorker = swRegistration.waiting ; }
             } 
            ); // end of .then() on promise-of-registration of serviceWorker 
-           showDebug('serviceWorker registration started ' + VER + ' '+ NowISO8601() ); 
+           showDebug('serviceWorker registration started ' + APP_VERSION + ' '+ NowISO8601() ); 
         } else {
           showDebug('ServiceWorker not available')
         }
@@ -373,13 +373,16 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
 
 
 -->
-
+<!--
   <input type="button" value="Fetch Version" 
-     onclick="let a=fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=VERSION', elmTextResults,true) ;  showDebug(a); " /><br />
+     onclick="let a=fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindowAndServiceWorkerCommunicatorQqv.032Qq=VERSION', elmTextResults,true) ;  showDebug(a); " /><br />
+-->
+  <input type="button" value="Fetch Version" 
+     onclick="let a=fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQq=VERSION', elmTextResults,true) ;  showDebug(a); " /><br />
   <input type="button" value="Fetch Date" 
-     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=CACHE_DATE', elmTextResults,true) ;" /><br />
+     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQq=CACHE_DATE', elmTextResults,true) ;" /><br />
   <input type="button" value="Fetch List of Cached Pages" 
-     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQqWindow%2BServiceWorkerCommunicatorQqv.031Qq=CACHE_LIST', elmTextResults,true) ;" /><br />
+     onclick=" fetchTextAndWriteToElementValue('?QqServiceWorkerInquireQq=CACHE_LIST', elmTextResults,true) ;" /><br />
    
   <a href="./PageThatDoesNotExist.html">./PageThatDoesNotExist.html</a><br />
 

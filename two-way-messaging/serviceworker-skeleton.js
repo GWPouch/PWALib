@@ -87,7 +87,29 @@ const APOS="'";  const QUOTE_SINGLE="'";
     function showByPostingMessageToBroadcastChannel(...dataToWrite){
       postMessage_BroadcastChannel({SHOW_DEBUG: writeValuesOnOneLineWithSeparators(dataToWrite)  }) ;
     }
-
+    function showDebugSET(howToShow){
+      //specify where showDebug messages go.  This is mainly useful in message processing.
+      switch ( howToShow.toUpperCase() ) {
+        case 'NONE':
+          showDebug = displayAsText ; //does nothing at all
+          break;
+        case 'CONSOLE':
+          showDebug = console.log.bind(console) ; //console window
+          break;
+        case 'MESSAGE_CLIENTS':
+          showDebug = showByPostingMessageToClients ; // only can work from ServiceWorker or other Worker
+          break;
+        case 'MESSAGE_BROADCAST':
+          showDebug = showByPostingMessageToBroadcastChannel ;// Safe in Worker, ServiceWorker,...  In a webpage, this might cause a stack overflow as the page keeps broadcasting the message.          
+          break;
+        // case value:
+          
+        //   break;
+        default:
+          showDebug = console.log.bind(console);
+          break;
+      }
+    }
 
     
     function NowISO8601( ){  return(  ( new Date() ).toISOString()    ); }
@@ -121,16 +143,18 @@ const APOS="'";  const QUOTE_SINGLE="'";
     // con sole.log('self in a ServiceWorker', describeObject(self))
 ///////////////////////////////////////////////////////////////////////////////
 
+
+
 ////////////////////////////////////////////////////////////////////////////////
 
   // Constants and semi-constants.  All of these could be const  , but let allows for setting them in ServiceWorker_initialize()
   let APP_NAME = 'Window+ServiceWorkerCommunicator';
   let APP_VERSION='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
   let APPandVER = APP_NAME + ' '+ APP_VERSION ;   
-  let APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+self.location.href 
+  let APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+ self.location.href 
   let broadcastChannel = null ; // new BroadcastChannel( APP_NAME); 
   // broadcast Channel.onmessage=ServiceWorker_message ;
-  // console.log('serviceworker broadcast Channel is '+ broad castChannel.name )
+  // con sole.log('serviceworker broadcast Channel is '+ broad castChannel.name )
   //     postMessage_Broad cast Channel({ping:'PING', how: 'broad castChancel for ' + broad castChannel.name  })
   //       broadcast Channel.close();
   
@@ -144,7 +168,8 @@ const APOS="'";  const QUOTE_SINGLE="'";
     './webpage.html',
     './webpage.js',
     './webpage.css',
-    './'
+    './',
+    './RedHerrings.html','./BallBearingHerrings.jpg'
   ];   
   
 
@@ -153,8 +178,16 @@ const APOS="'";  const QUOTE_SINGLE="'";
 
   let myRegistrationObj = null ;
   let myServiceWorkerObj = null;
-  let myServiceWorkerState = 'UNLV';
+  let myServiceWorkerState = 'MSU';
 
+  let myURLComplete ='http://www.none.com:443/No/Such/Path/AServiceWorker.js?ver=223#first';
+  let myURLOrigin ='http://www.none.com:443';
+  let myURLPath = '/No/Such/Path/';
+  let myURLName = 'AServiceWorker.js';
+  let myURLNameBase = 'AServiceWorker';
+  let myURLNameEXT = 'js'; // Should I check that EXT is js|JS|javascript|JAVASCRIPT|JavaScript ?
+
+  let myParameters={"APP_NAME":"NameGoesHere","APP_VERSION":"v.1.2.3","CACHE_FILES_LIST": ["a.txt","b.png"]  }
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -175,20 +208,16 @@ const APOS="'";  const QUOTE_SINGLE="'";
 function ServiceWorker_initialize(){
   // set 'global' variables (accessible only to the ServiceWorker and its children)
 
-//  maybe cache_name and such should be read from an XML file at startup during initialize
-  APP_NAME =  APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
-  APP_VERSION = 'v.031'; // this MUST come before setting up the broadcast channel and 
-                 //     sending out a test message, because we use VER in the adorned message
-  APPandVER = APP_NAME + ' '+ APP_VERSION ;
-  APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+ self.location.href +' ' ;
+// Find the URL that this ServiceWorker comes from
+myURLComplete = self.location.href; // should look like https://herrings.yes--we-have-no-bananas.gov/two-way-messaging/serviceworker-skeleton.js  
+myURLOrigin = self.location.origin ;
+let parts = splitStringOnce( self.location.pathname, '/',false)
+myURLPath = parts.before + '/';
+myURLName = parts.after ;
 
-  BroadCastChannel_START(APP_NAME); // or APPandVER
-  // broadcast Channel = new Broadcast Channel(APP_NAME); // or APPandVER
-  //   broadcast Channel.onmessage=ServiceWorker_message ;
-  //   console.log('sw broadcast Channel is '+ broadcastChannel.name )
-  // //postMessage_Broadcast Channel = broadcast Channel.postMessage.bind(broadcast Channel);
-  // postMessage_Broadcast Channel({what:'serviceWorker just started the broadcast Channel ' + APP_NAME })
-  
+parts = splitStringOnce(myURLName,DOT);
+myURLNameBase = parts.before ;
+myURLNameEXT  = parts.after ;
 
   //attach eventListeners    I find named functions much easier to debug than arrow functions with odd indentation.
 
@@ -211,7 +240,39 @@ function ServiceWorker_initialize(){
   self.addEventListener( 'statechange' ,ServiceWorker_stateChange) ; // this seems to never fire
 
 }
-ServiceWorker_initialize();
+// ( async ()=>{ // this is an IIFE (Immediately Invoked Function Expression)  
+//               // https://developer.mozilla.org/en-US/docs/Glossary/IIFE
+//               // so that ServiceWorker_initialize can await loading a file   await
+             ServiceWorker_initialize();
+//             }
+// )();
+
+
+
+
+async function parametersRead(){
+// reads a lot of ServiceWorker parameters like APP_NAME and CACHE_FILES_LIST
+// these are near constants
+  let resp = await fetch( myURLOrigin + myURLPath + myURLNameBase + '.json' )
+  myParameters  = await resp.json() ;
+
+  //moved from ServiceWorker_initialize
+    //  maybe cache_name and such should be read from an XML file at startup during initialize
+    APP_NAME =  myParameters.APP_NAME; //'   name of app goes here, like TimeStamp' // used for broadcast channel
+    APP_VERSION = myParameters.APP_VERSION; // this MUST come before setting up the broadcast channel and 
+                  //     sending out a test message, because we use VER in the adorned message
+    APPandVER = APP_NAME + ' '+ APP_VERSION ;
+    APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+ self.location.href +' ' ;
+
+    BroadCastChannel_START(APP_NAME); // or APPandVER
+    // broadcast Channel = new Broadcast Channel(APP_NAME); // or APPandVER
+    //   broadcast Channel.onmessage=ServiceWorker_message ;
+    //   con sole.log('sw broadcast Channel is '+ broadcastChannel.name )
+    // //postMessage_Broadcast Channel = broadcast Channel.postMessage.bind(broadcast Channel);
+    // postMessage_Broadcast Channel({what:'serviceWorker just started the broadcast Channel ' + APP_NAME })
+    CACHE_FILES_LIST = myParameters.CACHE_FILES_LIST ;
+    return( myParameters );
+}
 
 
 function ServiceWorker_install(eventInstall){
@@ -246,7 +307,16 @@ function ServiceWorker_install(eventInstall){
   myServiceWorkerState = myServiceWorkerObj.state;
 
 
-  eventInstall.waitUntil( cacheLoad()   );
+
+
+
+  eventInstall.waitUntil(
+    ( async ()=>{
+      await parametersRead();
+      await cacheLoad();
+     }) () 
+     );
+  //eventInstall.waitUntil(  cacheLoad() );
   eventInstall.waitUntil( self.skipWaiting()  ); // from https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
 
   showDebug(
@@ -267,6 +337,10 @@ function ServiceWorker_activate(eventActivate){
       // con sole.log('about to send message using postMessage_ALLClients')
       postMessageALL({what: 'ServiceWorker_activate', who:APPandVERandHREF})
       eventActivate.waitUntil( self.clients.claim() )  ; // https://stackoverflow.com/questions/33978993/serviceworker-no-fetchevent-for-javascript-triggered-request
+
+//      con sole.log( Object.getOwnPropertyNames(this)   );
+//['Object', 'Function', 'Array', 'Number', 'parseFloat', 'parseInt', 'Infinity', 'NaN', 'undefined', 'Boolean', 'String', 'Symbol', 'Date', 'Promise', 'RegExp', 'Error', 'AggregateError', 'EvalError', 'RangeError', 'ReferenceError', 'SyntaxError', 'TypeError', 'URIError', 'globalThis', 'JSON', 'Math', 'Intl', 'ArrayBuffer', 'Uint8Array', 'Int8Array', 'Uint16Array', 'Int16Array', 'Uint32Array', 'Int32Array', 'Float32Array', 'Float64Array', 'Uint8ClampedArray', 'BigUint64Array', 'BigInt64Array', 'DataView', 'Map', 'BigInt', 'Set', 'WeakMap', 'WeakSet', 'Proxy', 'Reflect', 'FinalizationRegistry', 'WeakRef', 'decodeURI', 'decodeURIComponent', 'encodeURI', 'encodeURIComponent', 'escape', 'unescape', 'eval', 'isFinite', 'isNaN', 'console', 'PushSubscriptionOptions', 'PushSubscription', 'PushManager', 'PushEvent', 'Permissions', 'PermissionStatus', 'PeriodicSyncManager', 'PeriodicSyncEvent', 'NotificationEvent', 'Notification', 'NavigatorUAData', 'CropTarget', 'BackgroundFetchUpdateUIEvent', 'BackgroundFetchRegistration', 'BackgroundFetchRecord', 'BackgroundFetchManager', 'BackgroundFetchEvent', 'PaymentRequestEvent', 'CanMakePaymentEvent', 'AbortPaymentEvent', 'WritableStreamDefaultWriter', 'WritableStreamDefaultController', 'WritableStream', 'WorkerNavigator', 'WorkerLocation', 'WorkerGlobalScope', 'WindowClient', 'WebSocket', 'WebGLVertexArrayObject', 'WebGLUniformLocation', 'WebGLTransformFeedback', 'WebGLTexture', 'WebGLSync', 'WebGLShaderPrecisionFormat', 'WebGLShader', 'WebGLSampler', 'WebGLRenderingContext', 'WebGLRenderbuffer', 'WebGLQuery', 'WebGLProgram', 'WebGLFramebuffer', …]
+
   showDebug( 'ServiceWorker_activate end', NowISO8601());
 }
 
@@ -472,8 +546,9 @@ function ServiceWorker_fetch_command(eventFetch){
 function ServiceWorker_fetch_inquire(eventFetch){
   showDebug('Starting  ServiceWorker_fetch_inquire', eventFetch.request.url, NowISO8601())
   // A long inquire string is good because it's unlikely to collide,
-  //   but is hard to type and can cause other problems with URI-encoding
-  const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq' + APP_NAME + 'Qq'+APP_VERSION+'Qq')   ; // this is the form used in searchParams.get
+  //   but is hard to type and can cause other problems with URI-encoding 
+  //   and updating the version or name in the serviceworker requires updating it in the dependent webpages
+  const K_strServiceWorkerInquire_RAW = ('QqServiceWorkerInquireQq');//  + APP_NAME + 'Qq'+APP_VERSION+'Qq')   ; // this is the form used in searchParams.get
   const K_strServiceWorkerInquire_esc  = encodeURIComponent(K_strServiceWorkerInquire_RAW);         // it must be in URI-escaped form in actual URL.
 
 
@@ -525,7 +600,7 @@ return ;
 function ServiceWorker_message(eventMessage){
   
   // con sole.log(' message event handler in ServiceWorker ' + APP_VERSION +' ' + NowISO8601() );
-  //if(LogLevel>=1)  console.log( writeMessageToString(eventMessage)  , NowISO8601() );
+  //if(LogLevel>=1)  con sole.log( writeMessageToString(eventMessage)  , NowISO8601() );
   try {
     let theData =eventMessage.data;
     
@@ -536,13 +611,13 @@ function ServiceWorker_message(eventMessage){
       let reply = processInquiry( inqString );
       reply.then( (ans)=>{
         console.log(APPandVERandHREF +' handled inquiry in message ', inqString, ans, NowISO8601() );
-        postMessageALL({theQuestion: inqString, theAnswer: ans});
+        postMessageALL({theQuestion: inqString, theAnswer: ans}); 
 return;
-      })   
-    }
+      })
+    } // close if on message has inquiry
 
     
-    let cmd = theData.cmd || theData.command || theData.Command || theData.COMMAND;
+    let cmd = theData.cmd || theData.CMD || theData.command || theData.Command || theData.COMMAND;
     if(cmd){
       let cmdString = cmd.toString();
       let reply = processCommands( cmdString );
@@ -557,7 +632,7 @@ return;
 
 
     // let cmd = eventMessage.data.cmd ;  // if object passed to  postMessage does not have data.cmd, this DOES NOT THROW AN ERROR, but assigns undefined to cmd.
-    // console.log('cmd = ' + cmd +' ' + APP_VERSION +' ' + NowISO8601() );
+    // con sole.log('cmd = ' + cmd +' ' + APP_VERSION +' ' + NowISO8601() );
     // if(cmd){  //undefined is falsy, so an object missing cmd does not throw an error, but does skip this
     //   processCommands(cmd) ;
     // } else {
@@ -607,25 +682,25 @@ return( retVal );
 
 async function cacheLoad(){
   showDebug('start of cacheLoad in serviceWorker', self.location.href, NowISO8601() )
-
   // in MSEdge, cache.addAll works, even if given a bad URL
   // in Chrome, it fails and doesn't add ANY of the pages if one is not found
   //   so back to make my own caching routing
 
-      // console.log('  about to try await caches.open(CACHE_NAME)', CACHE_NAME);
-      // console.log('  the files to get ' , CACHE_FILES_LIST)
+      // con sole.log('  about to try await caches.open(CACHE_NAME)', CACHE_NAME);
+      // con sole.log('  the files to get ' , CACHE_FILES_LIST)
       // the next line fails if you try to run it from VSCode>Debug>Launch
       // Uncaught (in promise) DOMException: Failed to execute 'open' on 'CacheStorage': Unexpected internal error. 
       //  see comment on https://stackoverflow.com/questions/64297126/service-worker-fails-on-caches-open
     const cache = await   self.caches.open(CACHE_NAME);
     
-      // console.log('   just opened cache. It is of type ' , cache.constructor.name)
+      // con sole.log('   just opened cache. It is of type ' , cache.constructor.name)
     
     let nF=0;
-    let nFiles = CACHE_FILES_LIST.length 
+    let nFiles = CACHE_FILES_LIST.length ;
     let arrAddPromises = new Array( nFiles );
     let arrFinalNames  = new Array( nFiles) ;
     for( nF=0; nF<nFiles;nF++){
+      // con sole.log(nF, CACHE_FILES_LIST[nF]);
       arrAddPromises[nF] = cache.add( CACHE_FILES_LIST[nF] );
     } 
     let nLoaded = 0;
@@ -857,9 +932,15 @@ function cloneRequestToNewURL(requestOriginal, urlWanted) {
   return(retVal);
 } // end of function cloneRequestToNewURL
   
-function splitStringOnce(StringIn, Delimiter ){
+function splitStringOnce(StringIn, Delimiter, AtStart = true ){
   StringIn = StringIn.trim();
-  let ndx = StringIn.indexOf( Delimiter );
+  let ndx = -1234 ;
+  if(AtStart){
+    ndx = StringIn.indexOf( Delimiter );
+  } else {
+    ndx = StringIn.lastIndexOf( Delimiter );
+  }
+  
   let retVal={before:StringIn, delimiter:Delimiter, after:''}
   if(ndx === -1 ){
     //leave retVal alone
@@ -883,7 +964,7 @@ async function processInquiry( strInquiry){
  switch ( question ) {
   // add any new case s   to the INQUIRIES_LIST
    case 'INQUIRIES_LIST':
-       answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,INQUIRIES_LIST'
+       answer = 'APP_NAME,APP_VERSION,CACHE_NAME,CACHE_DATE,CACHE_LIST,SERVICEWORKER_URL,INQUIRIES_LIST'
      break;
    case 'APP_NAME': 
        answer = APP_NAME ;
@@ -915,7 +996,9 @@ async function processInquiry( strInquiry){
    case 'CACHE_LIST':
        promAnswer =  listCachedURLs(theParameters, question) ;
      break;
- 
+    case 'SERVICEWORKER_URL':
+        answer = myURLComplete ;
+      break;    
    default:
        answer='Did not recognize inquiry "'+ question  +'"  . Check capitalization and spelling.   INQUIRIES_LIST to see known values.'
      break;
@@ -1036,8 +1119,12 @@ async function processCommands(CommandString){
 
   switch ( strCommand  ) {
     case 'CommandsList':
-        strResult = 'CacheDelete,CacheRefresh,BroadcastChannelClose,BroadcastChannelSwitch,ServiceWorkerUnregister,GoAway,CommandsList'
+        strResult = 'ShowDebugSet,CacheDelete,CacheRefresh,BroadcastChannelClose,BroadcastChannelSwitch,ServiceWorkerUnregister,GoAway,DebugMessagesGoTo,CommandsList'
       break;
+    case 'DebugMessagesGoTo':                
+      showDebugSET(theParameters);    
+      strResult = 'showDebug was set to ' + theParameters;      
+    break;    
 
     case 'CacheRefresh':                
         await cacheLoad();    
