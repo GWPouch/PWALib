@@ -24,13 +24,19 @@ const APOS="'";  const QUOTE_SINGLE="'";
     //  Make sure calls to this only happen AFTER page is loaded, or you get cryptic errors.
     // showDebug is used for the same purpose as console.debug or console.log, but can set to
     //   to different functions to use the webpage, or some other mechanism to display the text.
-    let showDebug = function displayAsText(...dataToWrite){ } ; // could be dumpToPREWithLotsOfLines,  document.writeln,  or console.debug
+    function showDebugPrototypeThatDoesNothing (...dataToWrite){ } ; // could be dumpToPREWithLotsOfLines,  document.writeln,  or console.debug
+    let showDebug = showDebugPrototypeThatDoesNothing ;
+      let showDebugName = 'showDebugPrototypeThatDoesNothing()' ;  // showDebug.name gives "bound log" for console.log.bind(console)
     showDebug = console.log.bind(console) ; // always safe
+      showDebugName='console.log()';
     // showDebug = showAsPREWithLineForEachItem ; only in webpage
+    //   showDebugName='showAsPREWithLineForEachItem()';
     // showDebug = showAsPREAtEndAsOneLineWithSpaces ; // only in webpage
+    //   showDebugName='showAsPREAtEndAsOneLineWithSpaces()';
     showDebug = showByPostingMessageToClients ;  // only in Worker, ServiceWorker,...
+      showDebugName='showByPostingMessageToClients()';
     // showDebug = showByPostingMessageToBroadcastChannel ;// Safe in Worker, ServiceWorker,...  In a webpage, this might cause a stack overflow as the page keeps broadcasting the message.
-    
+    //  showDebugName='showByPostingMessageToBroadcastChannel()';
     
     function writeValuesOnOneLineWithSeparators(...dataToWrite){
       let retVal = '';
@@ -91,24 +97,30 @@ const APOS="'";  const QUOTE_SINGLE="'";
       //specify where showDebug messages go.  This is mainly useful in message processing.
       switch ( howToShow.toUpperCase() ) {
         case 'NONE':
-          showDebug = displayAsText ; //does nothing at all
+          showDebug = showDebugPrototypeThatDoesNothing ; //does nothing at all
+            showDebugName = 'showDebugPrototypeThatDoesNothing()';
           break;
         case 'CONSOLE':
           showDebug = console.log.bind(console) ; //console window
+            showDebugName = 'console.log()'
           break;
         case 'MESSAGE_CLIENTS':
           showDebug = showByPostingMessageToClients ; // only can work from ServiceWorker or other Worker
+            showDebugName = 'showByPostingMessageToClients ()'
           break;
         case 'MESSAGE_BROADCAST':
           showDebug = showByPostingMessageToBroadcastChannel ;// Safe in Worker, ServiceWorker,...  In a webpage, this might cause a stack overflow as the page keeps broadcasting the message.          
+            showDebugName = 'showByPostingMessageToBroadcastChannel()';
           break;
         // case value:
           
         //   break;
         default:
           showDebug = console.log.bind(console);
+            showDebugName = howToShow + '-->> console.log()  '
           break;
       }
+      console.log( 'serviceWorker showDebug messages now directed at ' +  showDebugName + '  '+NowISO8601() +'  ' + APPandVERandHREF );
     }
 
     
@@ -151,7 +163,7 @@ const APOS="'";  const QUOTE_SINGLE="'";
   let APP_NAME = 'Window+ServiceWorkerCommunicator';
   let APP_VERSION='v.031' ; // this MUST come before trying to broadcast, because we append VER to messages
   let APPandVER = APP_NAME + ' '+ APP_VERSION ;   
-  let APPandVERandHREF ='ServiceWorker ' + APPandVER +' '+ self.location.href 
+  let APPandVERandHREF = /*'ServiceWorker ' + */ APPandVER +' '+ self.location.href 
   let broadcastChannel = null ; // new BroadcastChannel( APP_NAME); 
   // broadcast Channel.onmessage=ServiceWorker_message ;
   // con sole.log('serviceworker broadcast Channel is '+ broad castChannel.name )

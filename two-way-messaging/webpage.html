@@ -396,6 +396,8 @@ async function serviceWorkerStart( relURLOfServiceWorker ='./serviceworker.js' ,
     style="resize:none; overflow-y: scroll; overflow-x: scroll;"
     title="Results displayed here"   ></textarea>  
   <br/>
+  <input type="button" value="Set showDebug to console"
+    onclick="theServiceWorker.postMessage({cmd:'DebugMessagesGoTo:CONSOLE'})"  /><br/>
   <input type="button" value="Kill ServiceWorker and Cache" onclick="theServiceWorker.postMessage({ cmd:'GoAway' , value:'now'  });" />
 
 </body>
